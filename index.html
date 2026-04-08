@@ -682,6 +682,14 @@
 
     /* ── Main App ────────────────────────────────── */
     function App() {
+      const [page, setPage] = React.useState('home'); // 'home' or 'event'
+      const [events, setEvents] = React.useState([]); // Array of {id, name, records: []}
+      const [activeEventId, setActiveEventId] = React.useState(null);
+
+      // When an event is selected, filter the records
+      const eventRecords = activeEventId 
+        ? records.filter(r => r.eventId === activeEventId) 
+        : [];
       const [tab, setTab]         = useState("log");
       const [batteries, setBats]  = useState([]);
       const [records, setRecs]    = useState([]);
@@ -700,6 +708,95 @@
         batteryId: getPreselectedBattery(),
         match:"", v:"", pct:"", ir:""
       });
+
+      const promptNewEvent = () => {
+        const name = prompt("Enter Event Name (e.g. 2024 District Comp):");
+        if (!name) return;
+        
+        const newEvent = {
+          id: 'ev_' + Date.now(),
+          name: name,
+          createdAt: Date.now()
+        };
+        
+        // Save to state (and Firebase if you are using it)
+        const updatedEvents = [...events, newEvent];
+        setEvents(updatedEvents);
+        db.collection('events').doc(newEvent.id).set(newEvent); // Optional Firebase
+      };
+
+      const deleteEvent = (id) => {
+        if (confirm("Are you sure? This will hide records in this folder.")) {
+          setEvents(events.filter(e => e.id !== id));
+          // If you delete from Firebase, also handle the orphaned records
+        }
+      };
+
+      const selectEvent = (ev) => {
+        setActiveEventId(ev);
+        setPage('event');
+      };
+
+      // 1. PreTab Component
+      const PreTab = ({ activeEventId }) => (
+        <div className="card">
+          <div className="ch"><div className="ct">NEW PRE-MATCH RECORD</div></div>
+          <div className="cb">
+            <p style={{fontFamily:'var(--mono)', fontSize:'12px', color:'var(--muted)'}}>
+              Folder ID: {activeEventId}
+            </p>
+            {/* Add your existing pre-match form fields here */}
+          </div>
+        </div>
+      );
+
+      // 2. PostTab Component
+      const PostTab = ({ records }) => (
+        <div className="pg">
+          <div className="ct">PENDING POST-MATCH</div>
+          {records.filter(r => r.status === 'pre').length === 0 ? (
+            <div className="empty">No pending matches in this folder.</div>
+          ) : (
+            records.filter(r => r.status === 'pre').map(r => (
+              <div key={r.id} className="pending-rec">
+                {/* Add your post-match form logic here */}
+                <div className="pending-hdr">
+                  <span className="pending-bat">BAT {r.batteryId}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      );
+
+      // 3. HistoryTab Component
+      const HistoryTab = ({ records }) => (
+        <div className="pg">
+          <div className="ct">MATCH HISTORY</div>
+          {records.length === 0 ? (
+            <div className="empty">No records found for this event.</div>
+          ) : (
+            records.map(r => (
+              <div key={r.id} className="rec">
+                <div className="rec-id">MATCH {r.match} - BAT {r.batteryId}</div>
+              </div>
+            ))
+          )}
+        </div>
+      );
+
+      // 4. StatsTab Component
+      const StatsTab = ({ records }) => (
+        <div className="pg">
+          <div className="ct">EVENT STATISTICS</div>
+          <div className="stat-hero">
+            <div className="kpi">
+              <div className="kpi-label">TOTAL MATCHES</div>
+              <div className="kpi-value">{records.length}</div>
+            </div>
+          </div>
+        </div>
+      );
 
       // Auto-fill next match number when battery changes
       useEffect(() => {
@@ -741,6 +838,7 @@
         setSavingPre(true);
         try {
           await db.collection("records").add({
+            eventId:   activeEventId,
             batteryId: preForm.batteryId,
             match:     preForm.match,
             ts:        firebase.firestore.FieldValue.serverTimestamp(),
@@ -796,182 +894,77 @@
       if (view && view.type==="rec") return <RecordDetail record={view.data} onBack={()=>setView(view.from?{type:"bat",id:view.from.id,name:view.from.name}:null)} onDelete={()=>deleteRecord(view.data.id)} sharedState={sharedState}/>;
       if (view && view.type==="bat") return <BatteryDetail bid={view.name} batDocId={view.id} records={records} onBack={()=>setView(null)} onDelete={()=>deleteBattery(view.id,view.name)} onSelectRecord={r=>setView({type:"rec",data:r,from:{id:view.id,name:view.name}})} sharedState={sharedState}/>;
 
+      /* --- REPLACE THE ENTIRE RETURN BLOCK WITH THIS --- */
       return (
-        <div>
-          {toast && <div className="toast">{toast}</div>}
-          {confirm && <ConfirmDialog message={confirm.msg} onConfirm={()=>{confirm.fn();setConfirm(null);}} onCancel={()=>setConfirm(null)}/>}
-          {qrBat && <QRModal batName={qrBat} onClose={()=>setQrBat(null)}/>}
-          <div className="app">
-            <Header matchCount={completeRecs.length} pendingCount={pendingRecs.length} online={online}/>
+        <div className="app">
+          <Header 
+            onHome={() => setView('home')} 
+            syncState={syncState} 
+          />
+          
+          {/* Only show standard tabs if we are INSIDE an event */}
+          {page === 'event' && (
             <div className="tabs">
-              {[
-                ["log","📋 Pre"],
-                ["post", pendingRecs.length>0 ? <span>⏳ Post<span className="tab-badge">{pendingRecs.length}</span></span> : "⏳ Post"],
-                ["batteries","🔋 Battery List"],
-                ["history","📊 Battery History"],
-                ["stats","📈 Stats"]
-              ].map((p,i) => (
-                <button key={i} className={"tab"+(tab===["log","post","batteries","history","stats"][i]?" on":"")} onClick={()=>setTab(["log","post","batteries","history","stats"][i])}>{p[1]||p[0]}</button>
-              ))}
+              <button className={`tab ${tab === 'pre' ? 'on' : ''}`} onClick={() => setTab('pre')}>Pre</button>
+              <button className={`tab ${tab === 'post' ? 'on' : ''}`} onClick={() => setTab('post')}>Post</button>
+              <button className={`tab ${tab === 'history' ? 'on' : ''}`} onClick={() => setTab('history')}>History</button>
+              <button className={`tab ${tab === 'stats' ? 'on' : ''}`} onClick={() => setTab('stats')}>Stats</button>
             </div>
+          )}
 
-            <div className="pg">
-
-              {/* ── PRE-MATCH LOG ── */}
-              {tab==="log" && (
-                <div>
-                  {/* Instruction banner */}
-                  <div style={{background:"rgba(0,48,96,.3)",border:"1px solid rgba(91,163,255,.2)",borderRadius:4,padding:"10px 14px",marginBottom:12,fontFamily:"var(--mono)",fontSize:10,color:"#5BA3FF",lineHeight:1.8}}>
-                    📋 <strong>Pre-Match Logger</strong><br/>
-                    Fill in pre-match readings and tap Save. Someone else can enter post-match data from the ⏳ Post tab after the match.
-                  </div>
-
-                  <div className="card">
-                    <div className="ch"><span className="ct">Battery & Match</span></div>
-                    <div className="cb">
-                      <div className="fld">
-                        <label className="lbl">Battery</label>
-                        <select className="sel" value={preForm.batteryId} onChange={e=>setPreForm(f=>({...f,batteryId:e.target.value}))}>
-                          <option value="">— Select Battery —</option>
-                          {batteries.map(b=><option key={b.id} value={b.name}>{b.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="fld">
-                        <label className="lbl">Match Number</label>
-                        <input
-                          className={"inp inp-auto"}
-                          type="number" inputMode="numeric"
-                          placeholder="auto-filled"
-                          value={preForm.match}
-                          onChange={e=>setPreForm(f=>({...f,match:e.target.value}))}
-                        />
-                        <div className="fld-hint">↑ auto-filled from last match — edit if needed</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="card" style={{borderColor:"#003060"}}>
-                    <div className="ch" style={{borderColor:"#003060"}}>
-                      <span className="ct" style={{color:"#5BA3FF"}}>Pre-Match Readings</span>
-                      <span style={{fontFamily:"var(--mono)",fontSize:10,color:"#5BA3FF"}}>Before robot on field</span>
-                    </div>
-                    <div className="cb">
-                      <div className="row3">
-                        <div className="fld">
-                          <label className="lbl">Voltage (V)</label>
-                          <input className="inp" type="number" inputMode="decimal" step="0.01" placeholder="12.60" value={preForm.v} onChange={e=>setPreForm(f=>({...f,v:e.target.value}))}/>
-                        </div>
-                        <div className="fld">
-                          <label className="lbl">Charge (%)</label>
-                          <input className="inp" type="number" inputMode="numeric" placeholder="100" value={preForm.pct} onChange={e=>setPreForm(f=>({...f,pct:e.target.value}))}/>
-                        </div>
-                        <div className="fld">
-                          <label className="lbl">Int Res (mΩ)</label>
-                          <input className="inp" type="number" inputMode="decimal" step="0.1" placeholder="15.0" value={preForm.ir} onChange={e=>setPreForm(f=>({...f,ir:e.target.value}))}/>
+          <div className="pg">
+            {page === 'home' ? (
+              <>
+                {/* SECTION 1: THE BATTERY LIST */}
+                <div className="section-divider"><span>Battery Fleet</span></div>
+                <div className="card">
+                  {batteries.map(bat => (
+                    <div className="bi" key={bat.id}>
+                      <div className="bid">{bat.id}</div>
+                      <div className="bi-right">
+                        <div className={`rank-badge ${bat.status === 'OK' ? 'rank-ok' : 'rank-warn'}`}>
+                          {bat.status}
                         </div>
                       </div>
-                      <button className="btn btn-pre" disabled={!canSavePre || savingPre} onClick={savePreMatch}>
-                        {savingPre ? "Saving..." : "▶ Save Pre-Match Data"}
-                      </button>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              )}
 
-              {/* ── POST-MATCH TAB ── */}
-              {tab==="post" && (
-                <div>
-                  <div style={{background:"rgba(255,153,51,.08)",border:"1px solid rgba(255,153,51,.2)",borderRadius:4,padding:"10px 14px",marginBottom:12,fontFamily:"var(--mono)",fontSize:10,color:"var(--orange)",lineHeight:1.8}}>
-                    ⏳ <strong>Post-Match Logger</strong><br/>
-                    These batteries had pre-match data saved and are waiting for post-match readings.
+                {/* SECTION 2: THE EVENTS LIST */}
+                <div className="section-divider"><span>Events / Folders</span></div>
+                <div className="card">
+                  <div className="ch">
+                    <div className="ct">Event Folders</div>
+                    <button className="btn-qr" onClick={promptNewEvent}>+ New Event</button>
                   </div>
-                  {pendingRecs.length===0 ? (
-                    <div className="empty">✅<br/>No pending post-match entries.<br/>All matches are complete.</div>
+                  {events.length === 0 ? (
+                    <div className="empty">No events found. Create one to start tracking.</div>
                   ) : (
-                    pendingRecs.map(rec => (
-                      <PendingCard key={rec.id} rec={rec} onSavePost={savePostMatch} saving={savingPost}/>
+                    events.map(ev => (
+                      <div className="bi" key={ev.id} onClick={() => selectEvent(ev)}>
+                        <div className="bid">📂 {ev.name}</div>
+                        <button className="btn-d" onClick={(e) => { e.stopPropagation(); deleteEvent(ev.id); }}>
+                          Remove
+                        </button>
+                      </div>
                     ))
                   )}
                 </div>
-              )}
-
-              {/* ── FLEET ── */}
-              {tab==="batteries" && (
-                <div>
-                  <div className="card">
-                    <div className="ch"><span className="ct">Register Battery</span></div>
-                    <div className="cb">
-                      <div style={{display:"flex",gap:8}}>
-                        <input className="inp" style={{flex:1}} placeholder="e.g. BAT-01" value={newBat} onChange={e=>setNewBat(e.target.value.toUpperCase())} onKeyDown={e=>e.key==="Enter"&&addBattery()}/>
-                        <button className="btn btn-a" style={{width:"auto",padding:"10px 20px",letterSpacing:1}} onClick={addBattery}>Add</button>
-                      </div>
-                    </div>
-                  </div>
-                  {batteries.length>0 && <button className="print-all-btn" onClick={()=>printAllQR(batteries)}>🖨 Print All QR Codes ({batteries.length} batteries)</button>}
-                  <div className="card">
-                    <div className="ch"><span className="ct">Batteries ({batteries.length})</span></div>
-                    {batteries.length===0 && <div className="empty">🔋<br/>No batteries registered.</div>}
-                    {batteries.map(bat => {
-                      const lr = getLastCompleteRec(bat.name); const pct = lr?lr.post.pct:0; const cnt = completeRecs.filter(r=>r.batteryId===bat.name).length;
-                      const pendBat = pendingRecs.filter(r=>r.batteryId===bat.name).length;
-                      return (
-                        <div key={bat.id} className="bi" onClick={()=>setView({type:"bat",id:bat.id,name:bat.name})}>
-                          <div style={{flex:1}}>
-                            <div className="bid">{bat.name}{pendBat>0&&<span style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--orange)",marginLeft:8}}>⏳{pendBat}</span>}</div>
-                            <div className="bsub">{cnt} complete{lr?" · Last: "+lr.post.v+"V · "+lr.post.pct+"%":""}</div>
-                            <div className="hbar-w"><div className="hbar" style={{width:pct+"%",background:hColor(pct)}}/></div>
-                          </div>
-                          <div className="bi-right">
-                            <button className="btn-qr" onClick={e=>{e.stopPropagation();setQrBat(bat.name);}}>⬛ QR</button>
-                            <span style={{color:"var(--muted)",fontSize:22}}>›</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+              </>
+            ) : (
+              /* THE TABS VIEW (Only shows for the selected event) */
+              <>
+                <button className="back" onClick={() => setPage('home')}>← Back to Home</button>
+                <div style={{margin: '10px 0', fontFamily: 'var(--disp)', color: 'var(--yellow)'}}>
+                  CURRENT EVENT: {activeEventId}
                 </div>
-              )}
-
-              {/* ── HISTORY ── */}
-              {tab==="history" && (
-                <div className="card">
-                  <div className="ch"><span className="ct">All Matches ({records.length})</span>
-                    <span style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)"}}>{pendingRecs.length} pending</span>
-                  </div>
-                  {records.length===0 && <div className="empty">📋<br/>No matches logged yet.</div>}
-                  {records.map(r => {
-                    const isComplete = r.status==="complete"||r.post;
-                    return (
-                      <div key={r.id} className="rec" onClick={()=>setView({type:"rec",data:r})}>
-                        <div className="rec-top">
-                          <span className="rec-id">{r.batteryId}</span>
-                          <span className={"badge"+(isComplete?"":" badge-pre")}>MATCH {r.match}{isComplete?"":" · PRE"}</span>
-                        </div>
-                        <div style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--muted)",marginBottom:6}}>{fmtTs(r.ts)}</div>
-                        {isComplete ? (
-                          <div className="sg">
-                            <div className="st"><div className="sl">Voltage</div><div className="sv">{r.pre.v}→{r.post.v}</div><Delta a={r.pre.v} b={r.post.v}/></div>
-                            <div className="st"><div className="sl">Charge %</div><div className="sv">{r.pre.pct}→{r.post.pct}</div><Delta a={r.pre.pct} b={r.post.pct}/></div>
-                            <div className="st"><div className="sl">Int Res</div><div className="sv">{r.pre.ir}→{r.post.ir}</div><Delta a={r.pre.ir} b={r.post.ir}/></div>
-                          </div>
-                        ) : (
-                          <div style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--orange)"}}>⏳ Pre-match only — awaiting post-match data</div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* ── STATS ── */}
-              {tab==="stats" && <StatsTab batteries={batteries} records={records}/>}
-
-            </div>
-
-            <div className="sponsor-strip">
-              <img src={LOGO_SRC} className="sponsor-strip-logo" alt=""/>
-              <div className="sponsor-strip-text">CHARGERS · 5409 · Template made by FRC Team 180 S.P.A.M.</div>
-            </div>
+                
+                {tab === "pre" && <PreTab activeEventId={activeEventId} />}
+                {tab === "post" && <PostTab records={records.filter(r => r.eventId === activeEventId)} />}
+                {tab === "history" && <HistoryTab records={records.filter(r => r.eventId === activeEventId)} />}
+                {tab === "stats" && <StatsTab records={records.filter(r => r.eventId === activeEventId)} />}
+              </>
+            )}
           </div>
         </div>
       );
