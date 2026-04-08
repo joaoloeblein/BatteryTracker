@@ -192,6 +192,29 @@
     .section-divider{display:flex;align-items:center;gap:10px;margin:4px 0 14px;}
     .section-divider span{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
     .section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+    .event-banner {
+      background: var(--surface2);
+      border-bottom: 2px solid var(--blue-light);
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .exit-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .exit-btn:hover {
+      background: var(--red);
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -694,6 +717,9 @@
       const [savingPost, setSavingPost] = useState(false);
       const [confirm, setConfirm] = useState(null);
       const [qrBat, setQrBat]     = useState(null);
+      const [events, setEvents] = useState([]);
+      const [currentEvent, setCurrentEvent] = useState(null);
+      const [isEventLoading, setIsEventLoading] = useState(true);
 
       // Pre-match form
       const [preForm, setPreForm] = useState({
@@ -710,13 +736,73 @@
 
       useEffect(() => { if (getPreselectedBattery()) setTab("log"); }, []);
 
+      // 1. Fetch Batteries GLOBAL (Visible in all folders)
       useEffect(() => {
-        const u1 = db.collection("batteries").orderBy("name")
-          .onSnapshot(s=>{setBats(s.docs.map(d=>({id:d.id,...d.data()}))); setOnline(true); setLoading(false);}, ()=>{setOnline(false); setLoading(false);});
-        const u2 = db.collection("records").orderBy("ts","desc")
-          .onSnapshot(s=>{setRecs(s.docs.map(d=>({id:d.id,...d.data()}))); setOnline(true);}, ()=>setOnline(false));
-        return () => { u1(); u2(); };
+        // We do NOT check for currentEvent here because batteries are global
+        const q = query(collection(db, "batteries"), orderBy("n", "asc"));
+        const unsub = onSnapshot(q, (snap) => {
+          setBats(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+        return unsub;
+      }, []); // Empty dependency array means it loads once on startup
+
+      // 2. Fetch Records for the SELECTED folder only
+      useEffect(() => {
+        if (!currentEvent) {
+          setRecs([]); 
+          setLoading(false);
+          return;
+        }
+
+        setLoading(true);
+        // Records are nested inside the specific event folder
+        const q = query(collection(db, "events", currentEvent.id, "records"), orderBy("ts", "desc"));
+        const unsub = onSnapshot(q, (snap) => {
+          setRecs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+          setLoading(false);
+        });
+        return unsub;
+      }, [currentEvent]);
+
+      // 1. Fetch the list of "Folders" (Events)
+      useEffect(() => {
+        const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
+        const unsub = onSnapshot(q, (snap) => {
+          const evs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setEvents(evs);
+          setIsEventLoading(false);
+          
+          // 2. Auto-load the last folder used (from browser memory)
+          const savedEventId = localStorage.getItem("selectedEventId");
+          if (savedEventId && !currentEvent) {
+            const found = evs.find(e => e.id === savedEventId);
+            if (found) setCurrentEvent(found);
+          }
+        });
+        return unsub;
       }, []);
+
+      // 3. Helper function to "Open" a folder
+      const selectEvent = (ev) => {
+        setCurrentEvent(ev);
+        localStorage.setItem("selectedEventId", ev.id);
+      };
+
+      // 4. Helper function to "Create" a new folder
+      const createEvent = async () => {
+        const name = prompt("Enter Event/Folder Name (e.g. 'Waterloo Regional 2024'):");
+        if (!name) return;
+        try {
+          const docRef = await addDoc(collection(db, "events"), {
+            name: name,
+            createdAt: serverTimestamp()
+          });
+          // Automatically enter the new folder
+          selectEvent({ id: docRef.id, name: name });
+        } catch (e) {
+          showToast("Error creating folder");
+        }
+      };
 
       function showToast(msg) { setToast(msg); setTimeout(()=>setToast(null), 2600); }
       function askConfirm(msg,fn) { setConfirm({msg,fn}); }
@@ -740,7 +826,7 @@
       async function savePreMatch() {
         setSavingPre(true);
         try {
-          await db.collection("records").add({
+          await db.collection("events").doc(currentEvent.id).collection("records").add({
             batteryId: preForm.batteryId,
             match:     preForm.match,
             ts:        firebase.firestore.FieldValue.serverTimestamp(),
@@ -757,7 +843,7 @@
       async function savePostMatch(docId, postData) {
         setSavingPost(true);
         try {
-          await db.collection("records").doc(docId).update({
+          await db.collection("events").doc(currentEvent.id).collection("records").doc(docId).update({
             post:       postData,
             status:     "complete",
             postTs:     firebase.firestore.FieldValue.serverTimestamp(),
@@ -769,7 +855,7 @@
 
       async function deleteRecord(docId) {
         askConfirm("Delete this match record?", async()=>{
-          try { await db.collection("records").doc(docId).delete(); setView(null); showToast("Record deleted"); }
+          try { await db.collection("events").doc(currentEvent.id).collection("records").doc(docId).delete(); setView(null); showToast("Record deleted"); }
           catch(e) { showToast("Delete error"); }
         });
       }
@@ -797,182 +883,115 @@
       if (view && view.type==="bat") return <BatteryDetail bid={view.name} batDocId={view.id} records={records} onBack={()=>setView(null)} onDelete={()=>deleteBattery(view.id,view.name)} onSelectRecord={r=>setView({type:"rec",data:r,from:{id:view.id,name:view.name}})} sharedState={sharedState}/>;
 
       return (
-        <div>
+        <div className="app-container">
+          {/* CASE 1: No Folder Selected -> Show Folder List */}
+          {!currentEvent ? (
+            <div className="pg" style={{paddingTop: '40px'}}>
+              <div className="card">
+                <div className="ch">
+                  <div className="ct">EVENT FOLDERS</div>
+                </div>
+                <div className="cb">
+                  <p style={{marginBottom:'15px', fontSize:'0.9rem', color:'#aaa', textAlign:'center'}}>
+                    Select an event folder to access logs and stats.
+                  </p>
+                  
+                  <button className="btn btn-a" onClick={createEvent} style={{width:'100%', marginBottom:'20px', height:'50px', fontSize:'16px'}}>
+                    + CREATE NEW EVENT
+                  </button>
+
+                  <div className="event-list">
+                    {events.length === 0 && !isEventLoading ? (
+                      <div style={{textAlign:'center', padding:'40px 0', color:'#666', border:'1px dashed #444', borderRadius:'8px'}}>
+                        No folders found.
+                      </div>
+                    ) : (
+                      events.map(ev => (
+                        <div key={ev.id} className="rec" onClick={() => selectEvent(ev)} style={{cursor:'pointer', marginBottom:'12px', borderLeft:'4px solid var(--blue)'}}>
+                          <div className="rec-id" style={{fontSize:'18px'}}>{ev.name}</div>
+                          <div className="pending-time">
+                            Created: {ev.createdAt?.toDate ? ev.createdAt.toDate().toLocaleDateString() : 'Recently'}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* CASE 2: Folder is Selected -> Show the Tracker */
+            <div className="app-inner">
+              <div className="header">
+                <div className="header-top">
+                  <div className="team-info">
+                    <div className="team-number">5409</div>
+                    <div className="team-name">CHARGERS</div>
+                  </div>
+                  {/* EXIT BUTTON to go back to folders */}
+                  <button 
+                    onClick={() => { setCurrentEvent(null); localStorage.removeItem("selectedEventId"); }}
+                    style={{background:'#333', border:'1px solid #555', color:'#fff', padding:'6px 12px', borderRadius:'4px', fontSize:'11px', fontWeight:'bold', cursor:'pointer'}}
+                  >
+                    EXIT FOLDER
+                  </button>
+                </div>
+                
+                {/* Event Name Banner */}
+                <div style={{background:'rgba(27, 58, 140, 0.2)', padding:'10px 15px', borderBottom:'1px solid var(--blue)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                  <div>
+                    <span style={{color:'#888', fontSize:'10px', textTransform:'uppercase', display:'block', marginBottom:'2px'}}>Active Event</span>
+                    <div style={{fontSize:'16px', fontWeight:'bold', color:'var(--orange)'}}>{currentEvent.name}</div>
+                  </div>
+                  <div className={`status-dot ${online ? 'online' : 'offline'}`}></div>
+                </div>
+
+                <div className="tabs">
+                  <div className={`tab ${tab==="log"?"active":""}`} onClick={()=>setTab("log")}>LOGS</div>
+                  <div className={`tab ${tab==="scan"?"active":""}`} onClick={()=>setTab("scan")}>SCAN</div>
+                  <div className={`tab ${tab==="bats"?"active":""}`} onClick={()=>setTab("bats")}>BATTERIES</div>
+                  <div className={`tab ${tab==="stats"?"active":""}`} onClick={()=>setTab("stats")}>STATS</div>
+                </div>
+              </div>
+
+              <div className="main-content">
+                {/* ── LOGS TAB ── */}
+                {tab==="log" && (
+                  /* Insert your existing "log" tab code here */
+                  <div className="pg">...</div> 
+                )}
+
+                {/* ── SCAN TAB ── */}
+                {tab==="scan" && (
+                  /* Insert your existing "scan" tab code here */
+                  <div className="pg">...</div>
+                )}
+
+                {/* ── BATTERIES TAB (Global) ── */}
+                {tab==="bats" && (
+                  /* Insert your existing "batteries" tab code here */
+                  <div className="pg">...</div>
+                )}
+
+                {/* ── STATS TAB ── */}
+                {tab==="stats" && (
+                  /* Insert your existing StatsTab component here */
+                  <StatsTab batteries={batteries} records={records}/>
+                )}
+              </div>
+
+              <div className="sponsor-strip">
+                <img src={LOGO_SRC} className="sponsor-strip-logo" alt=""/>
+                <div className="sponsor-strip-text">CHARGERS · 5409</div>
+              </div>
+            </div>
+          )}
+          
+          {/* Overlays */}
           {toast && <div className="toast">{toast}</div>}
-          {confirm && <ConfirmDialog message={confirm.msg} onConfirm={()=>{confirm.fn();setConfirm(null);}} onCancel={()=>setConfirm(null)}/>}
-          {qrBat && <QRModal batName={qrBat} onClose={()=>setQrBat(null)}/>}
-          <div className="app">
-            <Header matchCount={completeRecs.length} pendingCount={pendingRecs.length} online={online}/>
-            <div className="tabs">
-              {[
-                ["log","📋 Pre"],
-                ["post", pendingRecs.length>0 ? <span>⏳ Post<span className="tab-badge">{pendingRecs.length}</span></span> : "⏳ Post"],
-                ["batteries","🔋 Battery List"],
-                ["history","📊 Battery History"],
-                ["stats","📈 Stats"]
-              ].map((p,i) => (
-                <button key={i} className={"tab"+(tab===["log","post","batteries","history","stats"][i]?" on":"")} onClick={()=>setTab(["log","post","batteries","history","stats"][i])}>{p[1]||p[0]}</button>
-              ))}
-            </div>
-
-            <div className="pg">
-
-              {/* ── PRE-MATCH LOG ── */}
-              {tab==="log" && (
-                <div>
-                  {/* Instruction banner */}
-                  <div style={{background:"rgba(0,48,96,.3)",border:"1px solid rgba(91,163,255,.2)",borderRadius:4,padding:"10px 14px",marginBottom:12,fontFamily:"var(--mono)",fontSize:10,color:"#5BA3FF",lineHeight:1.8}}>
-                    📋 <strong>Pre-Match Logger</strong><br/>
-                    Fill in pre-match readings and tap Save. Someone else can enter post-match data from the ⏳ Post tab after the match.
-                  </div>
-
-                  <div className="card">
-                    <div className="ch"><span className="ct">Battery & Match</span></div>
-                    <div className="cb">
-                      <div className="fld">
-                        <label className="lbl">Battery</label>
-                        <select className="sel" value={preForm.batteryId} onChange={e=>setPreForm(f=>({...f,batteryId:e.target.value}))}>
-                          <option value="">— Select Battery —</option>
-                          {batteries.map(b=><option key={b.id} value={b.name}>{b.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="fld">
-                        <label className="lbl">Match Number</label>
-                        <input
-                          className={"inp inp-auto"}
-                          type="number" inputMode="numeric"
-                          placeholder="auto-filled"
-                          value={preForm.match}
-                          onChange={e=>setPreForm(f=>({...f,match:e.target.value}))}
-                        />
-                        <div className="fld-hint">↑ auto-filled from last match — edit if needed</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="card" style={{borderColor:"#003060"}}>
-                    <div className="ch" style={{borderColor:"#003060"}}>
-                      <span className="ct" style={{color:"#5BA3FF"}}>Pre-Match Readings</span>
-                      <span style={{fontFamily:"var(--mono)",fontSize:10,color:"#5BA3FF"}}>Before robot on field</span>
-                    </div>
-                    <div className="cb">
-                      <div className="row3">
-                        <div className="fld">
-                          <label className="lbl">Voltage (V)</label>
-                          <input className="inp" type="number" inputMode="decimal" step="0.01" placeholder="12.60" value={preForm.v} onChange={e=>setPreForm(f=>({...f,v:e.target.value}))}/>
-                        </div>
-                        <div className="fld">
-                          <label className="lbl">Charge (%)</label>
-                          <input className="inp" type="number" inputMode="numeric" placeholder="100" value={preForm.pct} onChange={e=>setPreForm(f=>({...f,pct:e.target.value}))}/>
-                        </div>
-                        <div className="fld">
-                          <label className="lbl">Int Res (mΩ)</label>
-                          <input className="inp" type="number" inputMode="decimal" step="0.1" placeholder="15.0" value={preForm.ir} onChange={e=>setPreForm(f=>({...f,ir:e.target.value}))}/>
-                        </div>
-                      </div>
-                      <button className="btn btn-pre" disabled={!canSavePre || savingPre} onClick={savePreMatch}>
-                        {savingPre ? "Saving..." : "▶ Save Pre-Match Data"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ── POST-MATCH TAB ── */}
-              {tab==="post" && (
-                <div>
-                  <div style={{background:"rgba(255,153,51,.08)",border:"1px solid rgba(255,153,51,.2)",borderRadius:4,padding:"10px 14px",marginBottom:12,fontFamily:"var(--mono)",fontSize:10,color:"var(--orange)",lineHeight:1.8}}>
-                    ⏳ <strong>Post-Match Logger</strong><br/>
-                    These batteries had pre-match data saved and are waiting for post-match readings.
-                  </div>
-                  {pendingRecs.length===0 ? (
-                    <div className="empty">✅<br/>No pending post-match entries.<br/>All matches are complete.</div>
-                  ) : (
-                    pendingRecs.map(rec => (
-                      <PendingCard key={rec.id} rec={rec} onSavePost={savePostMatch} saving={savingPost}/>
-                    ))
-                  )}
-                </div>
-              )}
-
-              {/* ── FLEET ── */}
-              {tab==="batteries" && (
-                <div>
-                  <div className="card">
-                    <div className="ch"><span className="ct">Register Battery</span></div>
-                    <div className="cb">
-                      <div style={{display:"flex",gap:8}}>
-                        <input className="inp" style={{flex:1}} placeholder="e.g. BAT-01" value={newBat} onChange={e=>setNewBat(e.target.value.toUpperCase())} onKeyDown={e=>e.key==="Enter"&&addBattery()}/>
-                        <button className="btn btn-a" style={{width:"auto",padding:"10px 20px",letterSpacing:1}} onClick={addBattery}>Add</button>
-                      </div>
-                    </div>
-                  </div>
-                  {batteries.length>0 && <button className="print-all-btn" onClick={()=>printAllQR(batteries)}>🖨 Print All QR Codes ({batteries.length} batteries)</button>}
-                  <div className="card">
-                    <div className="ch"><span className="ct">Batteries ({batteries.length})</span></div>
-                    {batteries.length===0 && <div className="empty">🔋<br/>No batteries registered.</div>}
-                    {batteries.map(bat => {
-                      const lr = getLastCompleteRec(bat.name); const pct = lr?lr.post.pct:0; const cnt = completeRecs.filter(r=>r.batteryId===bat.name).length;
-                      const pendBat = pendingRecs.filter(r=>r.batteryId===bat.name).length;
-                      return (
-                        <div key={bat.id} className="bi" onClick={()=>setView({type:"bat",id:bat.id,name:bat.name})}>
-                          <div style={{flex:1}}>
-                            <div className="bid">{bat.name}{pendBat>0&&<span style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--orange)",marginLeft:8}}>⏳{pendBat}</span>}</div>
-                            <div className="bsub">{cnt} complete{lr?" · Last: "+lr.post.v+"V · "+lr.post.pct+"%":""}</div>
-                            <div className="hbar-w"><div className="hbar" style={{width:pct+"%",background:hColor(pct)}}/></div>
-                          </div>
-                          <div className="bi-right">
-                            <button className="btn-qr" onClick={e=>{e.stopPropagation();setQrBat(bat.name);}}>⬛ QR</button>
-                            <span style={{color:"var(--muted)",fontSize:22}}>›</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* ── HISTORY ── */}
-              {tab==="history" && (
-                <div className="card">
-                  <div className="ch"><span className="ct">All Matches ({records.length})</span>
-                    <span style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)"}}>{pendingRecs.length} pending</span>
-                  </div>
-                  {records.length===0 && <div className="empty">📋<br/>No matches logged yet.</div>}
-                  {records.map(r => {
-                    const isComplete = r.status==="complete"||r.post;
-                    return (
-                      <div key={r.id} className="rec" onClick={()=>setView({type:"rec",data:r})}>
-                        <div className="rec-top">
-                          <span className="rec-id">{r.batteryId}</span>
-                          <span className={"badge"+(isComplete?"":" badge-pre")}>MATCH {r.match}{isComplete?"":" · PRE"}</span>
-                        </div>
-                        <div style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--muted)",marginBottom:6}}>{fmtTs(r.ts)}</div>
-                        {isComplete ? (
-                          <div className="sg">
-                            <div className="st"><div className="sl">Voltage</div><div className="sv">{r.pre.v}→{r.post.v}</div><Delta a={r.pre.v} b={r.post.v}/></div>
-                            <div className="st"><div className="sl">Charge %</div><div className="sv">{r.pre.pct}→{r.post.pct}</div><Delta a={r.pre.pct} b={r.post.pct}/></div>
-                            <div className="st"><div className="sl">Int Res</div><div className="sv">{r.pre.ir}→{r.post.ir}</div><Delta a={r.pre.ir} b={r.post.ir}/></div>
-                          </div>
-                        ) : (
-                          <div style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--orange)"}}>⏳ Pre-match only — awaiting post-match data</div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* ── STATS ── */}
-              {tab==="stats" && <StatsTab batteries={batteries} records={records}/>}
-
-            </div>
-
-            <div className="sponsor-strip">
-              <img src={LOGO_SRC} className="sponsor-strip-logo" alt=""/>
-              <div className="sponsor-strip-text">CHARGERS · 5409 · Template made by FRC Team 180 S.P.A.M.</div>
-            </div>
-          </div>
+          {confirm && <Confirm {...confirm} />}
+          {qrBat && <QRView bat={qrBat} onClose={()=>setQrBat(null)} />}
+          {view && <RecordView rec={view} onClose={()=>setView(null)} />}
         </div>
       );
     }
