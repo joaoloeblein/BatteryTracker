@@ -220,7 +220,7 @@
                 )}
                 {tab === "post" && (
                   <div>
-                    {eventRecords.filter(r => !r.post).map(r => (
+                    {eventRecords.filter(r => !r.post && !r.skipped).map(r => (
                       <div key={r.id} className="card">
                         <div className="ch"><div className="ct">Post: {r.bat} (M{r.match})</div></div>
                         <div className="cb">
@@ -229,15 +229,27 @@
                             <input id={`p-${r.id}`} className="inp" placeholder="%" type="number" />
                             <input id={`i-${r.id}`} className="inp" placeholder="IR" type="number" step="0.1" />
                           </div>
-                          <button className="btn-p" onClick={() => {
-                            const v = document.getElementById(`v-${r.id}`).value;
-                            const pct = document.getElementById(`p-${r.id}`).value;
-                            const ir = document.getElementById(`i-${r.id}`).value;
-                            db.collection("records").doc(r.id).update({ post: {v, pct, ir} });
-                          }}>Submit</button>
+                          <div style={{display:'flex', gap:10}}>
+                            <button className="btn-p" style={{flex: 2}} onClick={() => {
+                              const v = document.getElementById(`v-${r.id}`).value;
+                              const pct = document.getElementById(`p-${r.id}`).value;
+                              const ir = document.getElementById(`i-${r.id}`).value;
+                              if(!v) return alert("Enter at least Voltage or click Skip");
+                              db.collection("records").doc(r.id).update({ post: {v, pct, ir} });
+                            }}>Submit</button>
+                            
+                            <button className="btn-d" style={{flex: 1, background: '#444', borderColor: '#666'}} onClick={() => {
+                              if(confirm("Skip post-match logging for this record?")) {
+                                db.collection("records").doc(r.id).update({ skipped: true });
+                              }
+                            }}>Skip</button>
+                          </div>
                         </div>
                       </div>
                     ))}
+                    {eventRecords.filter(r => !r.post && !r.skipped).length === 0 && (
+                      <div style={{textAlign:'center', padding:20, color:'var(--muted)'}}>No pending post-match records.</div>
+                    )}
                   </div>
                 )}
                 {tab === "history" && (
@@ -298,34 +310,60 @@
 
                           {/* Stats Grid */}
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                            {/* ... rest of your Voltage, Charge, and IR boxes remain the same ... */}
+                            
+                            {/* VOLTAGE BOX */}
                             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
                               <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, marginBottom: 4 }}>VOLTAGE</div>
                               <div style={{ fontSize: 15, fontWeight: 800, fontFamily: 'var(--mono)' }}>
-                                {r.pre.v}<span style={{ color: 'var(--muted)', margin: '0 2px', fontWeight: 400 }}>→</span>{r.post?.v || '--'}
+                                {r.pre.v}
+                                {!r.skipped && (
+                                  <>
+                                    <span style={{ color: 'var(--muted)', margin: '0 2px', fontWeight: 400 }}>→</span>
+                                    {r.post?.v || '--'}
+                                  </>
+                                )}
                               </div>
-                              {vDiff && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2, fontWeight: 700 }}>▼ {vDiff}</div>}
+                              {!r.skipped && vDiff && (
+                                <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2, fontWeight: 700 }}>▼ {vDiff}</div>
+                              )}
                             </div>
 
+                            {/* CHARGE BOX */}
                             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
                               <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, marginBottom: 4 }}>CHARGE %</div>
                               <div style={{ fontSize: 15, fontWeight: 800, fontFamily: 'var(--mono)' }}>
-                                {r.pre.pct}<span style={{ color: 'var(--muted)', margin: '0 2px', fontWeight: 400 }}>→</span>{r.post?.pct || '--'}
+                                {r.pre.pct}
+                                {!r.skipped && (
+                                  <>
+                                    <span style={{ color: 'var(--muted)', margin: '0 2px', fontWeight: 400 }}>→</span>
+                                    {r.post?.pct || '--'}
+                                  </>
+                                )}
                               </div>
-                              {pctDiff !== null && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2, fontWeight: 700 }}>▼ {pctDiff}</div>}
+                              {!r.skipped && pctDiff !== null && (
+                                <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2, fontWeight: 700 }}>▼ {pctDiff}</div>
+                              )}
                             </div>
 
+                            {/* IR BOX */}
                             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
                               <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, marginBottom: 4 }}>INT RES</div>
                               <div style={{ fontSize: 15, fontWeight: 800, fontFamily: 'var(--mono)' }}>
-                                {r.pre.ir}<span style={{ color: 'var(--muted)', margin: '0 2px', fontWeight: 400 }}>→</span>{r.post?.ir || '--'}
+                                {r.pre.ir}
+                                {!r.skipped && (
+                                  <>
+                                    <span style={{ color: 'var(--muted)', margin: '0 2px', fontWeight: 400 }}>→</span>
+                                    {r.post?.ir || '--'}
+                                  </>
+                                )}
                               </div>
-                              {irDiff !== null && (
+                              {!r.skipped && irDiff !== null && (
                                 <div style={{ fontSize: 11, color: irDiff >= 0 ? 'var(--red)' : 'var(--green)', marginTop: 2, fontWeight: 700 }}>
                                   {irDiff >= 0 ? `▲ ${irDiff}` : `▼ ${Math.abs(irDiff)}`}
                                 </div>
                               )}
                             </div>
+
                           </div>
                         </div>
                       );
