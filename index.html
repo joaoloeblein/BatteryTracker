@@ -3,89 +3,132 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Under Control · FRC Team 1156 · Battery Tracker</title>
+  <title>Under Control · FRC Team 1156 · Battery Viewer [READ ONLY]</title>
   <meta name="theme-color" content="#1B3A8C" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Under Control Battery View" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;900&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
     :root{
-      --blue:#384293;--black:#000000;
-      --red:#FF4D4D;--red-dark:#8B1010;
+      --blue:#1B3A8C;--blue-dark:#122870;--blue-light:#2E55CC;
       --yellow:#F5C800;--green:#39FF14;
-      --orange:#FF9933;--white:#FFFFFF;
-      --bg:#01021f;--surface:#0F1526;--surface2:#161E35;
+      --bg:#0A0E1A;--surface:#0F1526;--surface2:#161E35;
       --border:#1E2D5A;--text:#E8ECF8;--muted:#5A6A99;
       --mono:'Share Tech Mono',monospace;--disp:'Oswald',sans-serif;--body:'Barlow Condensed',sans-serif;
     }
-    *{box-sizing:border-box;margin:0;padding:0;}
-    html,body{background:var(--bg);height:100%;font-family:var(--body);color:var(--text);-webkit-tap-highlight-color:transparent;}
-    .app{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
-    
-    .hdr{background:var(--blue);border-bottom:3px solid var(--white);position:sticky;top:0;z-index:100;}
-    .hdr-inner{display:flex;align-items:center;padding:12px 16px;gap:15px;}
-    .hdr-title-group{display:flex; flex-direction:column;}
-    .hdr-title{font-family:var(--disp);font-size:24px;font-weight:900;letter-spacing:1px;color:var(--white);line-height:1;}
-    .hdr-subtitle { display: block; font-size: 1rem; font-weight: normal; color: var(--white); }
-    
-    .tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:73px;z-index:90;}
-    .tab{flex:1;padding:14px 5px;font-family:var(--disp);font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;}
-    .tab.on{color:var(--yellow);border-bottom-color:var(--yellow);background:rgba(245,200,0,0.05);}
-    
-    .pg{padding:16px;flex:1;}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:4px;margin-bottom:20px;overflow:visible;}
-    .ch{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);}
-    .ct{font-family:var(--disp);font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--yellow);}
-    .cb{padding:16px; position: relative;}
-    .bi{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
-    .bid{font-family:var(--disp);font-size:18px;font-weight:700;}
-    
-    .inp{width:100%;background:#070B16;border:1px solid var(--border);border-radius:3px;padding:12px;color:var(--text);font-family:var(--mono);margin-bottom:10px;outline:none;}
-    .btn-p{width:100%;background:var(--blue);color:white;border:none;padding:14px;font-family:var(--disp);font-size:14px;font-weight:700;text-transform:uppercase;border-radius:3px;cursor:pointer;}
-    .btn-qr{background:var(--blue);color:white;border:none;padding:6px 12px;border-radius:3px;font-family:var(--disp);font-size:11px;cursor:pointer;}
-    .btn-d{color:var(--red);background:none;border:none;font-size:11px;cursor:pointer;font-family:var(--disp);}
-    .back-btn{background:none;border:none;color:var(--yellow);padding:10px 16px;font-family:var(--disp);cursor:pointer;font-weight:700;}
-
-    .ov-grid{display:grid;gap:10px;margin-bottom:10px;}
-    .ov-box{background:#070B16;padding:12px;border:1px solid var(--border);border-left:3px solid var(--muted); border-radius:2px;}
-    .ov-label{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
-    .ov-val{font-family:var(--disp);font-size:26px;font-weight:700;line-height:1;}
-    .ov-sub{font-size:10px; color:var(--muted); margin-top:4px;}
-
-    .comp-tabs { display: flex; background: #070B16; border-radius: 4px; padding: 4px; margin-bottom: 20px; border: 1px solid var(--border);}
-    .comp-tab { flex:1; background:none; border:none; color: var(--muted); padding: 8px; font-family: var(--disp); font-size: 10px; font-weight: 700; border-radius: 2px; cursor: pointer; }
-    .comp-tab.on { background: var(--surface2); color: var(--yellow); }
-    
-    .graph-container { position: relative; padding-bottom: 30px; margin-top: 10px; min-height: 100px; overflow: visible;}
-    .chart-row { display: flex; align-items: center; margin-bottom: 12px; gap: 8px; position: relative; z-index: 2;}
-    .chart-label { width: 45px; font-family: var(--disp); font-weight: 700; font-size: 14px; color: var(--text); text-align: right; }
-    .chart-track { flex: 1; background: rgba(255,255,255,0.03); height: 20px; border-radius: 2px; position: relative; border: 1px solid rgba(255,255,255,0.05); overflow: hidden;}
-    .chart-bar { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1); position: relative;}
-    .chart-val-label { font-family: var(--mono); font-size: 11px; color: var(--text); min-width: 45px; margin-left: 4px;}
-
-    .bar-overlay-drop { position: absolute; top: 0; left: 0; height: 100%; background: rgba(255,255,255,0.15); }
-    
-    .grid-lines { position: absolute; top: 0; left: 53px; right: 49px; bottom: 30px; display: flex; justify-content: space-between; pointer-events: none; }
-    .grid-line { width: 1px; height: 100%; background: rgba(255,255,255,0.08); }
-    .x-axis { position: absolute; bottom: 0; left: 53px; right: 49px; display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 6px; }
-    .x-tick { font-family: var(--mono); font-size: 9px; color: var(--muted); position: relative; transform: translateX(-50%); }
-
-    .deep-dive-graph { height: 180px; position: relative; background: rgba(0,0,0,0.25); border: 1px solid var(--border); margin: 10px 0; padding: 10px 10px 30px 40px; overflow: visible; }
-    .y-axis-label { position: absolute; left: 8px; top: 50%; transform: rotate(-90deg) translateX(50%); font-family: var(--mono); font-size: 9px; color: var(--muted); transform-origin: left;}
-    
-    .dot { cursor: pointer; transition: r 0.2s, stroke-width 0.2s; }
-    .dot:hover { r: 5; stroke-width: 2; }
-
-    .popover { 
-      position: absolute; background: #161E35; border: 1px solid var(--yellow); 
-      border-radius: 4px; padding: 10px; z-index: 9999; width: 140px;
-      pointer-events: none; box-shadow: 0 4px 15px rgba(0,0,0,0.8);
-    }
-    .pop-title { font-family: var(--disp); font-weight: 700; color: var(--yellow); border-bottom: 1px solid var(--border); margin-bottom: 5px; font-size: 12px;}
-    .pop-row { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; margin-bottom: 2px; }
-
-    .rank-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; }
-    .rank-id { font-family: var(--disp); font-weight: 700; font-size: 15px; }
-    .rank-stat { font-family: var(--mono); font-size: 12px; }
+    html,body{background:var(--bg);height:100%;-webkit-tap-highlight-color:transparent;}
+    #root{height:100%;}
+    .app{font-family:var(--body);background:var(--bg);min-height:100vh;max-width:430px;margin:0 auto;color:var(--text);}
+    /* RO Banner */
+    .ro-banner{background:linear-gradient(90deg,#3A1A00,#5A2A00,#3A1A00);border-bottom:2px solid #FF9933;padding:7px 14px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:20;}
+    .ro-text{font-family:var(--mono);font-size:10px;color:#FF9933;letter-spacing:1px;flex:1;}
+    .ro-badge{font-family:var(--disp);font-size:11px;font-weight:700;letter-spacing:2px;background:#FF9933;color:#000;padding:3px 8px;border-radius:2px;flex-shrink:0;}
+    /* Header */
+    .hdr{background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue) 60%,var(--blue-light) 100%);border-bottom:3px solid var(--yellow);position:sticky;top:32px;z-index:10;box-shadow:0 2px 20px rgba(0,0,0,.5);}
+    .hdr-inner{display:flex;align-items:center;gap:12px;padding:10px 14px;}
+    .hdr-logo{width:52px;height:52px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));}
+    .hdr-text{flex:1;}
+    .hdr-title{font-family:var(--disp);font-size:20px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--yellow);line-height:1;}
+    .hdr-team{font-family:var(--disp);font-size:13px;font-weight:400;color:#AAC0FF;letter-spacing:1px;margin-top:2px;}
+    .hdr-tagline{font-family:var(--mono);font-size:8px;color:rgba(170,192,255,.7);letter-spacing:.5px;margin-top:3px;text-transform:uppercase;}
+    .hdr-right{text-align:right;flex-shrink:0;}
+    .hdr-stat{font-family:var(--mono);font-size:11px;color:var(--yellow);}
+    .hdr-sync{font-family:var(--mono);font-size:9px;margin-top:4px;display:flex;align-items:center;gap:4px;justify-content:flex-end;}
+    /* Tabs */
+    .tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:107px;z-index:9;}
+    .tab{flex:1;padding:9px 2px;font-family:var(--disp);font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;text-align:center;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;}
+    .tab.on{color:var(--yellow);border-bottom-color:var(--yellow);}
+    /* Cards */
+    .pg{padding:14px;padding-bottom:40px;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:4px;margin-bottom:12px;overflow:hidden;}
+    .ch{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);}
+    .ct{font-family:var(--disp);font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--yellow);}
+    .cb{padding:14px;}
+    /* Data */
+    .sg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+    .st{background:#070B16;padding:7px 9px;border:1px solid var(--border);border-radius:2px;}
+    .sl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+    .sv{font-family:var(--mono);font-size:12px;color:var(--text);margin-top:2px;}
+    .sd{font-family:var(--mono);font-size:10px;margin-top:1px;display:block;}
+    .pos{color:#39FF14;}.neg{color:#FF5555;}
+    .badge{font-family:var(--mono);font-size:10px;background:rgba(27,58,140,.4);color:var(--yellow);padding:3px 8px;border:1px solid rgba(245,200,0,.3);border-radius:2px;}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+    .dst{background:#070B16;padding:11px;border:1px solid var(--border);border-radius:2px;}
+    /* Records */
+    .rec{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+    .rec:last-child{border-bottom:none;}
+    .rec:hover,.rec:active{background:var(--surface2);}
+    .rec-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+    .rec-id{font-family:var(--disp);font-size:17px;font-weight:700;letter-spacing:1px;}
+    /* Fleet */
+    .bi{padding:13px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+    .bi:last-child{border-bottom:none;}
+    .bi:hover,.bi:active{background:var(--surface2);}
+    .bid{font-family:var(--disp);font-size:18px;font-weight:700;letter-spacing:1px;}
+    .bsub{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px;}
+    .hbar-w{height:4px;background:#1A2040;width:80px;margin-top:5px;border-radius:2px;}
+    .hbar{height:4px;border-radius:2px;}
+    /* Misc */
+    .empty{text-align:center;padding:40px 20px;color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:1px;line-height:2.2;}
+    .back{background:none;border:none;color:var(--yellow);cursor:pointer;font-family:var(--disp);font-weight:600;font-size:14px;letter-spacing:1px;padding:0;}
+    /* Sync */
+    .sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;}
+    .sync-live{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;}
+    .sync-off{background:#FF5555;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    /* Loading */
+    .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:16px;background:var(--bg);}
+    .loading img{width:90px;height:90px;object-fit:contain;animation:breathe 2s ease-in-out infinite;}
+    @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+    .loading-title{font-family:var(--disp);font-size:22px;font-weight:700;letter-spacing:4px;color:var(--yellow);}
+    .loading-sub{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:2px;}
+    .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--yellow);border-radius:50%;animation:spin .8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    /* Footer */
+    .sponsor-strip{background:var(--blue-dark);border-top:1px solid rgba(245,200,0,.2);padding:8px 14px;display:flex;align-items:center;gap:8px;}
+    .sponsor-strip-logo{width:22px;height:22px;object-fit:contain;opacity:.7;}
+    .sponsor-strip-text{font-family:var(--mono);font-size:9px;color:rgba(170,192,255,.5);letter-spacing:1px;text-transform:uppercase;}
+    /* Setup */
+    .setup-step{display:flex;gap:12px;margin-bottom:16px;align-items:flex-start;}
+    .step-num{background:var(--yellow);color:#000;font-family:var(--disp);font-weight:700;font-size:13px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+    .step-text{font-family:var(--mono);font-size:12px;color:var(--text);line-height:1.7;}
+    /* Stats */
+    .stat-hero{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+    .stat-hero-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+    .kpi{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px 12px;display:flex;flex-direction:column;gap:4px;}
+    .kpi-label{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+    .kpi-value{font-family:var(--disp);font-size:28px;font-weight:700;line-height:1;}
+    .kpi-sub{font-family:var(--mono);font-size:9px;color:var(--muted);}
+    .kpi-yellow{color:var(--yellow);}
+    .kpi-blue{color:#5BA3FF;}
+    .bar-row{padding:8px 14px;border-bottom:1px solid var(--border);}
+    .bar-row:last-child{border-bottom:none;}
+    .bar-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+    .bar-name{font-family:var(--disp);font-size:14px;font-weight:600;letter-spacing:1px;}
+    .bar-val{font-family:var(--mono);font-size:11px;}
+    .bar-track{height:6px;background:#1A2040;border-radius:3px;overflow:hidden;}
+    .bar-fill{height:6px;border-radius:3px;}
+    .bar-sub{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px;}
+    .rank-badge{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:2px;font-weight:700;}
+    .rank-ok{background:rgba(57,255,20,.1);color:var(--green);border:1px solid rgba(57,255,20,.3);}
+    .rank-1{background:rgba(245,200,0,.15);color:var(--yellow);border:1px solid rgba(245,200,0,.4);}
+    .rank-warn{background:rgba(255,85,85,.15);color:#FF5555;border:1px solid rgba(255,85,85,.4);}
+    .alert-banner{padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+    .alert-banner:last-child{border-bottom:none;}
+    .alert-icon{font-size:16px;flex-shrink:0;}
+    .alert-text{font-family:var(--mono);font-size:10px;line-height:1.5;}
+    .alert-bat{font-family:var(--disp);font-size:12px;font-weight:700;color:var(--yellow);}
+    /* Charts */
+    .bat-selector{margin:0 14px 12px;display:flex;align-items:center;gap:8px;}
+    .bat-selector label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;flex-shrink:0;}
+    .bat-selector select{flex:1;background:#070B16;border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:7px 10px;border-radius:3px;outline:none;-webkit-appearance:none;appearance:none;}
+    .bat-selector select:focus{border-color:var(--yellow);}
+    .chart-tabs{display:flex;margin:0 14px 12px;border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+    .chart-tab{flex:1;padding:7px 4px;font-family:var(--disp);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;text-align:center;color:var(--muted);border:none;background:var(--surface2);cursor:pointer;transition:all .15s;border-right:1px solid var(--border);}
+    .chart-tab:last-child{border-right:none;}
+    .chart-tab.on{color:var(--yellow);background:#0A1030;}
   </style>
 </head>
 <body>
@@ -93,601 +136,331 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 
-  <script type="text/babel">
-    const firebaseConfig = { 
-        apiKey: "AIzaSyBjCIvmVXYGse1HZH5P8qcLcSB8AaovUTg",
-        authDomain: "battery-tracker-1156.firebaseapp.com",
-        projectId: "battery-tracker-1156",
-        storageBucket: "battery-tracker-1156.firebasestorage.app",
-        messagingSenderId: "336037957747",
-        appId: "1:336037957747:web:5799ba1767553be4deda06"
+  <script>
+    var LOGO_SRC = "under.png";
+    var firebaseConfig = {
+      apiKey: "AIzaSyBjCIvmVXYGse1HZH5P8qcLcSB8AaovUTg",
+      authDomain: "battery-tracker-1156.firebaseapp.com",
+      projectId: "battery-tracker-1156",
+      storageBucket: "battery-tracker-1156.firebasestorage.app",
+      messagingSenderId: "336037957747",
+      appId: "1:336037957747:web:5799ba1767553be4deda06"
     };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    var CONFIG_FILLED = !firebaseConfig.apiKey.includes("PASTE");
+    var db;
+    if (CONFIG_FILLED) { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
+    Chart.defaults.color='#5A6A99'; Chart.defaults.borderColor='#1E2D5A';
+    Chart.defaults.font.family="'Share Tech Mono',monospace"; Chart.defaults.font.size=10;
+  </script>
 
-    const App = () => {
-      const [page, setPage] = React.useState("home");
-      const [tab, setTab] = React.useState("pre");
-      const [batteries, setBatteries] = React.useState([]);
-      const [records, setRecords] = React.useState([]);
-      const [events, setEvents] = React.useState([]);
-      const [activeEvent, setActiveEvent] = React.useState(null);
-      const [pre, setPre] = React.useState({ match:'', bat:'', v:'', pct:'', ir:'' });
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useRef, useMemo } = React;
+    const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;
+    const n2=v=>+v.toFixed(2); const n1=v=>+v.toFixed(1);
+    function fmtTs(ts){if(!ts)return"";try{return new Date(ts.toDate?ts.toDate():ts).toLocaleString();}catch{return"";}}
+    function fmtTsShort(ts){if(!ts)return"";try{return new Date(ts.toDate?ts.toDate():ts).toLocaleDateString();}catch{return"";}}
+    function irColor(ir){return ir<15?"#39FF14":ir<20?"#F5C800":"#FF5555";}
+    function voltColor(v){return v>12.4?"#39FF14":v>12.0?"#F5C800":"#FF5555";}
 
-      React.useEffect(() => {
-        const u1 = db.collection("batteries").onSnapshot(s => setBatteries(s.docs.map(d => ({id: d.id, ...d.data()}))));
-        const u2 = db.collection("records").onSnapshot(s => setRecords(s.docs.map(d => ({id: d.id, ...d.data()}))));
-        const u3 = db.collection("events").orderBy("timestamp", "desc").onSnapshot(s => setEvents(s.docs.map(d => ({id: d.id, ...d.data()}))));
-        return () => { u1(); u2(); u3(); };
-      }, []);
+    function ChartCanvas({type,data,options,height=180}){
+      const ref=useRef(null); const chartRef=useRef(null);
+      useEffect(()=>{
+        if(!ref.current)return;
+        if(chartRef.current){chartRef.current.destroy();chartRef.current=null;}
+        chartRef.current=new Chart(ref.current,{type,data,options});
+        return()=>{if(chartRef.current){chartRef.current.destroy();chartRef.current=null;}};
+      },[JSON.stringify(data)]);
+      return(<div style={{position:"relative",height:height,background:"#070B16",borderRadius:3,border:"1px solid #1E2D5A",padding:"8px 6px 6px"}}><canvas ref={ref}/></div>);
+    }
 
-      const eventRecords = records.filter(r => r.eventId === activeEvent?.id);
-      const sortedBats = [...batteries].sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+    function IRChart({recs}){
+      const sorted=[...recs].reverse();
+      const labels=sorted.map((_,i)=>"M"+(i+1));
+      const preIR=sorted.map(r=>r.pre.ir); const postIR=sorted.map(r=>r.post.ir);
+      const data={labels,datasets:[
+        {label:"Post-Match IR",data:postIR,borderColor:"#F5C800",backgroundColor:"rgba(245,200,0,0.08)",pointBackgroundColor:postIR.map(v=>irColor(v)),pointRadius:5,pointHoverRadius:7,borderWidth:2,tension:0.3,fill:true},
+        {label:"Pre-Match IR",data:preIR,borderColor:"#5BA3FF",backgroundColor:"transparent",pointBackgroundColor:"#5BA3FF",pointRadius:3,borderWidth:1.5,borderDash:[4,3],tension:0.3},
+        ...(sorted.length?[{label:"Watch (15mΩ)",data:Array(sorted.length).fill(15),borderColor:"rgba(245,200,0,0.35)",borderWidth:1,borderDash:[6,4],pointRadius:0,fill:false},{label:"Replace (20mΩ)",data:Array(sorted.length).fill(20),borderColor:"rgba(255,85,85,0.4)",borderWidth:1,borderDash:[6,4],pointRadius:0,fill:false}]:[])
+      ]};
+      const options={responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:"#0F1526",borderColor:"#1E2D5A",borderWidth:1,titleColor:"#F5C800",bodyColor:"#E8ECF8",callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}mΩ`}}},scales:{x:{grid:{color:"#1E2D5A"},ticks:{color:"#5A6A99",font:{size:9}}},y:{grid:{color:"#1E2D5A"},ticks:{color:"#5A6A99",font:{size:9},callback:v=>v+"mΩ"}}}};
+      return(<div><ChartCanvas type="line" data={data} options={options} height={190}/><div style={{display:"flex",flexWrap:"wrap",gap:12,padding:"8px 2px 0",fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)"}}><span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:14,height:2,background:"#F5C800",borderRadius:1,display:"inline-block"}}></span>Post-Match IR</span><span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:14,height:2,background:"#5BA3FF",borderRadius:1,display:"inline-block",opacity:.6}}></span>Pre-Match IR</span><span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:14,height:2,background:"rgba(245,200,0,.4)",borderRadius:1,display:"inline-block"}}></span>15mΩ watch</span><span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:14,height:2,background:"rgba(255,85,85,.5)",borderRadius:1,display:"inline-block"}}></span>20mΩ replace</span></div></div>);
+    }
 
-      const savePre = () => {
-        if(!pre.match || !pre.bat || !pre.v) return alert("Missing Info");
-        db.collection("records").add({
-          match: pre.match, bat: pre.bat, eventId: activeEvent.id,
-          pre: { v: pre.v, pct: pre.pct, ir: pre.ir },
-          timestamp: Date.now()
+    function VoltageChart({recs}){
+      const sorted=[...recs].reverse();
+      const labels=sorted.map((_,i)=>"M"+(i+1));
+      const data={labels,datasets:[
+        {label:"Pre-Match V",data:sorted.map(r=>r.pre.v),borderColor:"#5BA3FF",backgroundColor:"rgba(91,163,255,0.06)",pointBackgroundColor:"#5BA3FF",pointRadius:4,borderWidth:2,tension:0.3,fill:true},
+        {label:"Post-Match V",data:sorted.map(r=>r.post.v),borderColor:"#F5C800",backgroundColor:"rgba(245,200,0,0.06)",pointBackgroundColor:sorted.map(r=>voltColor(r.post.v)),pointRadius:5,borderWidth:2,tension:0.3,fill:true},
+        ...(sorted.length?[{label:"12.0V floor",data:Array(sorted.length).fill(12.0),borderColor:"rgba(255,85,85,0.4)",borderWidth:1,borderDash:[6,4],pointRadius:0,fill:false}]:[])
+      ]};
+      const options={responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:"#0F1526",borderColor:"#1E2D5A",borderWidth:1,titleColor:"#F5C800",bodyColor:"#E8ECF8",callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}V`}}},scales:{x:{grid:{color:"#1E2D5A"},ticks:{color:"#5A6A99",font:{size:9}}},y:{grid:{color:"#1E2D5A"},ticks:{color:"#5A6A99",font:{size:9},callback:v=>v+"V"},min:Math.max(0,Math.min(...sorted.map(r=>r.post.v))-0.3)}}};
+      return(<div><ChartCanvas type="line" data={data} options={options} height={190}/><div style={{display:"flex",flexWrap:"wrap",gap:12,padding:"8px 2px 0",fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)"}}><span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:14,height:2,background:"#5BA3FF",display:"inline-block",borderRadius:1}}></span>Pre-Match V</span><span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:14,height:2,background:"#F5C800",display:"inline-block",borderRadius:1}}></span>Post-Match V</span><span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:14,height:2,background:"rgba(255,85,85,.5)",display:"inline-block",borderRadius:1}}></span>12.0V floor</span></div></div>);
+    }
+
+    function DrainChart({recs}){
+      const sorted=[...recs].reverse();
+      const labels=sorted.map((_,i)=>"M"+(i+1));
+      const drainV=sorted.map(r=>n2(r.pre.v-r.post.v));
+      const drainPct=sorted.map(r=>r.pre.pct-r.post.pct);
+      const data={labels,datasets:[
+        {label:"Voltage Drop (V)",data:drainV,backgroundColor:drainV.map(v=>v>0.6?"rgba(255,85,85,0.7)":v>0.4?"rgba(245,200,0,0.7)":"rgba(57,255,20,0.5)"),borderColor:drainV.map(v=>v>0.6?"#FF5555":v>0.4?"#F5C800":"#39FF14"),borderWidth:1,borderRadius:2,yAxisID:"yV"},
+        {label:"Charge Used (%)",data:drainPct,type:"line",borderColor:"#AAC0FF",backgroundColor:"transparent",pointBackgroundColor:"#AAC0FF",pointRadius:4,borderWidth:1.5,tension:0.3,yAxisID:"yP"}
+      ]};
+      const options={responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:"#0F1526",borderColor:"#1E2D5A",borderWidth:1,titleColor:"#F5C800",bodyColor:"#E8ECF8",callbacks:{label:ctx=>ctx.datasetIndex===0?` Volt drop: ${ctx.parsed.y}V`:` Charge used: ${ctx.parsed.y}%`}}},scales:{x:{grid:{color:"#1E2D5A"},ticks:{color:"#5A6A99",font:{size:9}}},yV:{position:"left",grid:{color:"#1E2D5A"},ticks:{color:"#5A6A99",font:{size:9},callback:v=>v+"V"}},yP:{position:"right",grid:{drawOnChartArea:false},ticks:{color:"#AAC0FF",font:{size:9},callback:v=>v+"%"}}}};
+      return(<div><ChartCanvas type="bar" data={data} options={options} height={190}/><div style={{display:"flex",flexWrap:"wrap",gap:12,padding:"8px 2px 0",fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)"}}><span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:10,height:10,background:"rgba(57,255,20,0.7)",display:"inline-block",borderRadius:2}}></span>Volt drop (left)</span><span style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:14,height:2,background:"#AAC0FF",display:"inline-block",borderRadius:1}}></span>Charge % (right)</span></div></div>);
+    }
+
+    function FleetIRChart({batStats}){
+      const sorted=[...batStats].sort((a,b)=>a.avgIR-b.avgIR);
+      const data={labels:sorted.map(b=>b.name),datasets:[{label:"Avg Post-Match IR",data:sorted.map(b=>b.avgIR),backgroundColor:sorted.map(b=>irColor(b.avgIR)+"99"),borderColor:sorted.map(b=>irColor(b.avgIR)),borderWidth:1,borderRadius:3}]};
+      const options={responsive:true,maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false},tooltip:{backgroundColor:"#0F1526",borderColor:"#1E2D5A",borderWidth:1,titleColor:"#F5C800",bodyColor:"#E8ECF8",callbacks:{label:ctx=>` ${ctx.parsed.x}mΩ`}}},scales:{x:{grid:{color:"#1E2D5A"},ticks:{color:"#5A6A99",font:{size:9},callback:v=>v+"mΩ"}},y:{grid:{color:"#1A2040"},ticks:{color:"#E8ECF8",font:{size:10,weight:"600"}}}}};
+      return <ChartCanvas type="bar" data={data} options={options} height={Math.max(120,sorted.length*36)}/>;
+    }
+
+    function FleetVoltageChart({batStats}){
+      const sorted=[...batStats].sort((a,b)=>b.avgPostV-a.avgPostV);
+      const data={labels:sorted.map(b=>b.name),datasets:[{label:"Avg Post-Match Voltage",data:sorted.map(b=>b.avgPostV),backgroundColor:sorted.map(b=>voltColor(b.avgPostV)+"99"),borderColor:sorted.map(b=>voltColor(b.avgPostV)),borderWidth:1,borderRadius:3}]};
+      const options={responsive:true,maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false},tooltip:{backgroundColor:"#0F1526",borderColor:"#1E2D5A",borderWidth:1,titleColor:"#F5C800",bodyColor:"#E8ECF8",callbacks:{label:ctx=>` ${ctx.parsed.x}V`}}},scales:{x:{grid:{color:"#1E2D5A"},ticks:{color:"#5A6A99",font:{size:9},callback:v=>v+"V"},min:Math.max(0,Math.min(...sorted.map(b=>b.avgPostV))-0.3)},y:{grid:{color:"#1A2040"},ticks:{color:"#E8ECF8",font:{size:10,weight:"600"}}}}};
+      return <ChartCanvas type="bar" data={data} options={options} height={Math.max(120,sorted.length*36)}/>;
+    }
+
+    function StatsTab({batteries,records}){
+      const [selBat,setSelBat]=useState("");
+      const [batChartTab,setBatChartTab]=useState("ir");
+      const [fleetChartTab,setFleetChartTab]=useState("ir");
+
+      const batStats=useMemo(()=>{
+        return batteries.map(bat=>{
+          const recs=records.filter(r=>r.batteryId===bat.name);
+          if(!recs.length) return {name:bat.name,matches:0};
+          return{name:bat.name,matches:recs.length,avgPostV:n2(avg(recs.map(r=>r.post.v))),avgDrainV:n2(avg(recs.map(r=>r.pre.v-r.post.v))),avgDrainPct:n1(avg(recs.map(r=>r.pre.pct-r.post.pct))),avgIR:n1(avg(recs.map(r=>r.post.ir))),lastIR:recs[0].post.ir,irTrend:recs.slice(0,8).reverse().map(r=>r.post.ir),avgPreV:n2(avg(recs.map(r=>r.pre.v))),recs};
+        }).filter(b=>b.matches>0).sort((a,b)=>a.avgIR-b.avgIR);
+      },[batteries,records]);
+
+      const fleetStats=useMemo(()=>{
+        if(!records.length) return null;
+        return{avgDrainV:n2(avg(records.map(r=>r.pre.v-r.post.v))),avgDrainPct:n1(avg(records.map(r=>r.pre.pct-r.post.pct))),avgPostV:n2(avg(records.map(r=>r.post.v))),avgPostIR:n1(avg(records.map(r=>r.post.ir)))};
+      },[records]);
+
+      const alerts=useMemo(()=>{
+        const out=[];
+        batStats.forEach(b=>{
+          if(b.irTrend&&b.irTrend.length>=3){const l=b.irTrend.slice(-3);if(l[2]>l[1]&&l[1]>l[0])out.push({type:'ir',bat:b.name,val:b.lastIR});}
+          if(b.avgPostV!==null&&b.avgPostV<12.0)out.push({type:'volt',bat:b.name,val:b.avgPostV});
         });
-        setPre({ match:'', bat:'', v:'', pct:'', ir:'' });
-        setTab("history");
-      };
+        return out;
+      },[batStats]);
 
-      return (
-        <div className="app">
-          <div className="hdr">
-            <div className="hdr-inner">
-              <img src="under.png" alt="Logo" width="45" height="45" />
-              <div className="hdr-title-group">
-                <div className="hdr-title">1156 UNDER CONTROL</div>
-                <div className="hdr-subtitle">BATTERY TRACKER</div>
+      const selBatRecs=useMemo(()=>selBat?records.filter(r=>r.batteryId===selBat):[],[selBat,records]);
+      useEffect(()=>{if(!selBat&&batStats.length)setSelBat(batStats[0].name);},[batStats]);
+
+      if(!records.length) return <div className="empty" style={{paddingTop:60}}>📊<br/>No match data yet.</div>;
+
+      return(
+        <div>
+          {alerts.length>0&&(<div className="card" style={{borderColor:"#FF5555"}}><div className="ch" style={{borderColor:"#FF5555"}}><span className="ct" style={{color:"#FF5555"}}>⚠ Alerts ({alerts.length})</span></div>{alerts.map((a,i)=>(<div key={i} className="alert-banner"><div className="alert-icon">{a.type==='ir'?'🔴':'⚡'}</div><div className="alert-text"><div className="alert-bat">{a.bat}</div>{a.type==='ir'?`IR rising 3 matches in a row (${a.val}mΩ)`:`Avg post-match voltage low (${a.val}V)`}</div></div>))}</div>)}
+
+          <div className="card">
+            <div className="ch"><span className="ct">Fleet Overview</span></div>
+            <div className="cb" style={{paddingBottom:8}}>
+              <div className="stat-hero">
+                <div className="kpi"><div className="kpi-label">Total Matches</div><div className="kpi-value kpi-yellow">{records.length}</div><div className="kpi-sub">{batteries.length} batteries</div></div>
+                <div className="kpi"><div className="kpi-label">Avg Post-Match V</div><div className="kpi-value" style={{color:voltColor(fleetStats.avgPostV)}}>{fleetStats.avgPostV}V</div><div className="kpi-sub">across all matches</div></div>
+              </div>
+              <div className="stat-hero-3">
+                <div className="kpi"><div className="kpi-label">Avg Volt Drop</div><div className="kpi-value kpi-blue">{fleetStats.avgDrainV}V</div><div className="kpi-sub">per match</div></div>
+                <div className="kpi"><div className="kpi-label">Avg Charge</div><div className="kpi-value kpi-blue">{fleetStats.avgDrainPct}%</div><div className="kpi-sub">used / match</div></div>
+                <div className="kpi"><div className="kpi-label">Avg IR</div><div className="kpi-value" style={{color:irColor(fleetStats.avgPostIR),fontSize:22}}>{fleetStats.avgPostIR}mΩ</div><div className="kpi-sub">post-match</div></div>
               </div>
             </div>
           </div>
 
-          {page === "home" ? (
-            <div className="pg">
-              <div className="card">
-                <div className="ch"><div className="ct">🔋 Batteries</div><button className="btn-qr" onClick={() => {const n = prompt("Name:"); if(n) db.collection("batteries").doc(n.toUpperCase().trim()).set({added: Date.now()})}}>+ Add</button></div>
-                <div className="cb" style={{padding:0}}>
-                  {sortedBats.map(b => (
-                    <div key={b.id} className="bi"><div className="bid">{b.id}</div><button className="btn-d" onClick={() => confirm(`Delete ${b.id}?`) && db.collection("batteries").doc(b.id).delete()}>Delete</button></div>
-                  ))}
-                </div>
-              </div>
-              <div className="card">
-                <div className="ch">
-                  <div className="ct">📁 Events</div>
-                  <button className="btn-qr" onClick={() => {const n = prompt("Event Name:"); if(n) db.collection("events").add({name: n, timestamp: Date.now()})}}>+ New</button>
-                </div>
-                <div className="cb" style={{padding:0}}>
-                  {events.map(ev => (
-                    <div 
-                      key={ev.id} 
-                      className="bi" 
-                      onClick={() => { setActiveEvent(ev); setPage("event"); }}
-                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                    >
-                      <div className="bid">📁 {ev.name}</div>
-                      <button 
-                        className="btn-d" 
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevents navigating to the event page when clicking delete
-                          if (confirm(`Delete event "${ev.name}"?`)) {
-                            db.collection("events").doc(ev.id).delete();
-                          }
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={{display:'flex', flexDirection:'column', flex:1}}>
-              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', paddingRight:16}}>
-                <button className="back-btn" onClick={() => setPage("home")}>← BACK</button>
-                <div style={{fontFamily:'var(--disp)', fontSize:'12px', color:'var(--yellow)', fontWeight:700}}>{activeEvent?.name}</div>
-              </div>
-              <div className="tabs">
-                {[{id:"pre", label:"📋 PRE"}, {id:"post", label:"⌛ POST"}, {id:"history", label:"📊 HISTORY"}, {id:"stats", label:"📈 STATS"}].map(t => (
-                  <button key={t.id} className={`tab ${tab === t.id ? 'on' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>
-                ))}
-              </div>
-              <div className="pg">
-                {tab === "pre" && (
-                  <div className="card"><div className="cb">
-                    <input className="inp" type="number" placeholder="Match #" value={pre.match} onChange={e=>setPre({...pre, match:e.target.value})}/>
-                    <select className="inp" value={pre.bat} onChange={e=>setPre({...pre, bat:e.target.value})}>
-                      <option value="">-- Select Battery --</option>
-                      {sortedBats.map(b => <option key={b.id} value={b.id}>{b.id}</option>)}
-                    </select>
-                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10}}>
-                      <input className="inp" placeholder="V" type="number" step="0.01" value={pre.v} onChange={e=>setPre({...pre, v:e.target.value})}/>
-                      <input className="inp" placeholder="%" type="number" value={pre.pct} onChange={e=>setPre({...pre, pct:e.target.value})}/>
-                      <input className="inp" placeholder="IR" type="number" step="0.1" value={pre.ir} onChange={e=>setPre({...pre, ir:e.target.value})}/>
-                    </div>
-                    <button className="btn-p" onClick={savePre}>Log Pre-Match</button>
-                  </div></div>
-                )}
-                {tab === "post" && (
-                  <div>
-                    {eventRecords.filter(r => !r.post && !r.skipped).map(r => (
-                      <div key={r.id} className="card">
-                        <div className="ch"><div className="ct">Post: {r.bat} (M{r.match})</div></div>
-                        <div className="cb">
-                          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:10}}>
-                            <input id={`v-${r.id}`} className="inp" placeholder="V" type="number" step="0.01" />
-                            <input id={`p-${r.id}`} className="inp" placeholder="%" type="number" />
-                            <input id={`i-${r.id}`} className="inp" placeholder="IR" type="number" step="0.1" />
-                          </div>
-                          <div style={{display:'flex', gap:10}}>
-                            <button className="btn-p" style={{flex: 2}} onClick={() => {
-                              const v = document.getElementById(`v-${r.id}`).value;
-                              const pct = document.getElementById(`p-${r.id}`).value;
-                              const ir = document.getElementById(`i-${r.id}`).value;
-                              if(!v) return alert("Enter at least Voltage or click Skip");
-                              db.collection("records").doc(r.id).update({ post: {v, pct, ir} });
-                            }}>Submit</button>
-                            
-                            <button className="btn-d" style={{flex: 1, background: '#444', borderColor: '#666'}} onClick={() => {
-                              if(confirm("Skip post-match logging for this record?")) {
-                                db.collection("records").doc(r.id).update({ skipped: true });
-                              }
-                            }}>Skip</button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {eventRecords.filter(r => !r.post && !r.skipped).length === 0 && (
-                      <div style={{textAlign:'center', padding:20, color:'var(--muted)'}}>No pending post-match records.</div>
-                    )}
-                  </div>
-                )}
-                {tab === "history" && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {eventRecords.sort((a, b) => b.timestamp - a.timestamp).map(r => {
-                      const vDiff = r.post ? (parseFloat(r.pre.v) - parseFloat(r.post.v)).toFixed(1) : null;
-                      const pctDiff = r.post ? (parseInt(r.pre.pct) - parseInt(r.post.pct)) : null;
-                      const irDiff = r.post ? Math.round((parseFloat(r.post.ir) - parseFloat(r.pre.ir)) * 10) / 10 : null;
-
-                      return (
-                        <div key={r.id} className="card" style={{ padding: 12, position: 'relative' }}>
-                          {/* Header Row */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                            <div>
-                              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                                {r.bat}
-                              </div>
-                              <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, opacity: 0.8 }}>
-                                {new Date(r.timestamp).toLocaleString()}
-                              </div>
-                            </div>
-                            
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                              <div style={{ 
-                                border: '1px solid var(--yellow)', 
-                                padding: '2px 10px', 
-                                borderRadius: 4, 
-                                color: 'var(--yellow)', 
-                                fontSize: 11, 
-                                fontWeight: 800,
-                                letterSpacing: '0.5px'
-                              }}>
-                                MATCH {r.match}
-                              </div>
-                              
-                              {/* DELETE BUTTON */}
-                              <button 
-                                onClick={() => {
-                                  if(confirm(`Delete log for ${r.bat} (Match ${r.match})?`)) {
-                                    db.collection("records").doc(r.id).delete();
-                                  }
-                                }}
-                                style={{
-                                  background: 'rgba(255, 70, 70, 0.1)',
-                                  border: '1px solid #ff4646',
-                                  color: '#ff4646',
-                                  borderRadius: '4px',
-                                  padding: '2px 6px',
-                                  fontSize: '10px',
-                                  fontWeight: 'bold',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Stats Grid */}
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                            
-                            {/* VOLTAGE BOX */}
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, marginBottom: 4 }}>VOLTAGE</div>
-                              <div style={{ fontSize: 15, fontWeight: 800, fontFamily: 'var(--mono)' }}>
-                                {r.pre.v}
-                                {!r.skipped && (
-                                  <>
-                                    <span style={{ color: 'var(--muted)', margin: '0 2px', fontWeight: 400 }}>→</span>
-                                    {r.post?.v || '--'}
-                                  </>
-                                )}
-                              </div>
-                              {!r.skipped && vDiff && (
-                                <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2, fontWeight: 700 }}>▼ {vDiff}</div>
-                              )}
-                            </div>
-
-                            {/* CHARGE BOX */}
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, marginBottom: 4 }}>CHARGE %</div>
-                              <div style={{ fontSize: 15, fontWeight: 800, fontFamily: 'var(--mono)' }}>
-                                {r.pre.pct}
-                                {!r.skipped && (
-                                  <>
-                                    <span style={{ color: 'var(--muted)', margin: '0 2px', fontWeight: 400 }}>→</span>
-                                    {r.post?.pct || '--'}
-                                  </>
-                                )}
-                              </div>
-                              {!r.skipped && pctDiff !== null && (
-                                <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2, fontWeight: 700 }}>▼ {pctDiff}</div>
-                              )}
-                            </div>
-
-                            {/* IR BOX */}
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
-                              <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, marginBottom: 4 }}>INT RES</div>
-                              <div style={{ fontSize: 15, fontWeight: 800, fontFamily: 'var(--mono)' }}>
-                                {r.pre.ir}
-                                {!r.skipped && (
-                                  <>
-                                    <span style={{ color: 'var(--muted)', margin: '0 2px', fontWeight: 400 }}>→</span>
-                                    {r.post?.ir || '--'}
-                                  </>
-                                )}
-                              </div>
-                              {!r.skipped && irDiff !== null && (
-                                <div style={{ fontSize: 11, color: irDiff >= 0 ? 'var(--red)' : 'var(--green)', marginTop: 2, fontWeight: 700 }}>
-                                  {irDiff >= 0 ? `▲ ${irDiff}` : `▼ ${Math.abs(irDiff)}`}
-                                </div>
-                              )}
-                            </div>
-
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {tab === "stats" && <StatsView batteries={sortedBats} records={eventRecords} />}
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    };
-
-    const StatsView = ({ batteries, records }) => {
-      const [activeSubTab, setActiveSubTab] = React.useState("ir");
-      const [deepDiveTab, setDeepDiveTab] = React.useState("ir_trend");
-      const [selectedBat, setSelectedBat] = React.useState("");
-      const [hoveredIndex, setHoveredIndex] = React.useState(null);
-
-      const valid = records.filter(r => r.post);
-
-      const avg = (arr, path) => {
-        if(!arr.length) return 0;
-        return arr.reduce((s, r) => s + parseFloat(r.post[path] || 0), 0) / arr.length;
-      };
-
-      const fleetAvgV = avg(valid, 'v');
-      const fleetAvgIR = avg(valid, 'ir');
-      const fleetAvgDrop = valid.reduce((s, r) => s + (parseFloat(r.pre.v) - parseFloat(r.post.v)), 0) / (valid.length || 1);
-      const fleetAvgCharge = valid.reduce((s, r) => s + (parseFloat(r.pre.pct) - parseFloat(r.post.pct)), 0) / (valid.length || 1);
-
-      const comparisonData = batteries.map(b => {
-        const bRecs = valid.filter(r => r.bat === b.id);
-        if (!bRecs.length) return null;
-        const sorted = [...bRecs].sort((a, b) => b.timestamp - a.timestamp);
-        return {
-          id: b.id,
-          latestIR: parseFloat(sorted[0].post.ir),
-          avgV: bRecs.reduce((s, r) => s + parseFloat(r.post.v), 0) / bRecs.length,
-          avgDrop: bRecs.reduce((s, r) => s + (parseFloat(r.pre.v) - parseFloat(r.post.v)), 0) / bRecs.length,
-          usage: bRecs.length,
-          avgDrain: bRecs.reduce((s, r) => s + (parseFloat(r.pre.pct) - parseFloat(r.post.pct)), 0) / bRecs.length
-        };
-      }).filter(Boolean);
-
-      const diveRecs = valid.filter(r => r.bat === selectedBat).sort((a, b) => parseInt(a.match) - parseInt(b.match));
-
-      const getDeepDiveScales = () => {
-        if (!selectedBat || diveRecs.length === 0) return null;
-        if (deepDiveTab === 'ir_trend') {
-          const maxVal = Math.max(...diveRecs.map(r => Math.max(parseFloat(r.pre.ir), parseFloat(r.post.ir))), 22);
-          return { min: 0, max: Math.ceil(maxVal / 2) * 2, unit: 'mΩ' };
-        }
-        if (deepDiveTab === 'v_trend') {
-          const maxVal = Math.max(...diveRecs.map(r => parseFloat(r.pre.v)), 13);
-          return { min: 7.5, max: parseFloat(maxVal.toFixed(1)), unit: 'V' };
-        }
-        const maxDrop = Math.max(...diveRecs.map(r => (parseFloat(r.pre.v) - parseFloat(r.post.v))), 1);
-        const maxDrain = Math.max(...diveRecs.map(r => (parseFloat(r.pre.pct) - parseFloat(r.post.pct))), 25);
-        return { min: 0, maxV: Math.ceil(maxDrop * 10) / 10, maxPct: Math.ceil(maxDrain / 5) * 5 };
-      };
-
-      const ddScale = getDeepDiveScales();
-
-      // New helper for consistent vertical positioning of threshold lines
-      const getYPos = (val) => {
-        if (!ddScale) return 0;
-        return 100 - (((val - ddScale.min) / (ddScale.max - ddScale.min)) * 100);
-      };
-
-      const getStatusColor = (val, type) => {
-        if (type === 'ir_trend') {
-          if (val < 15) return 'var(--green)';
-          if (val <= 20) return 'var(--yellow)';
-          return 'var(--red)';
-        }
-        if (type === 'v_trend') {
-          if (val > 12.5) return 'var(--green)';
-          if (val >= 12) return 'var(--yellow)';
-          return 'var(--red)';
-        }
-        if (type === 'drain_bar') {
-          if (val < 0.5) return 'var(--green)';
-          if (val <= 1.0) return 'var(--yellow)';
-          return 'var(--red)';
-        }
-        return 'var(--blue)';
-      };
-
-      const getCompScale = () => {
-        if (activeSubTab === 'ir') return { min: 0, max: 25, unit: "mΩ", steps: 5 };
-        if (activeSubTab === 'post voltage') return { min: 10.5, max: 13, unit: "V", steps: 5 };
-        if (activeSubTab === 'drain') return { min: 0, max: 50, unit: "%", steps: 5 };
-        return { min: 0, max: 10, unit: "x", steps: 5 };
-      };
-      const compScale = getCompScale();
-      const compTicks = Array.from({ length: compScale.steps + 1 }, (_, i) => compScale.min + (i * (compScale.max - compScale.min) / compScale.steps));
-
-      const getX = (i, total) => 5 + (i / (total - 1 || 1)) * 88;
-
-      const getSmoothPath = (recs, type, isSecondary = false) => {
-        if (recs.length < 2) return "";
-        const points = recs.map((r, i) => {
-          const x = getX(i, recs.length);
-          let val = 0;
-          if (type === 'ir_trend') {
-            const ir = isSecondary ? parseFloat(r.pre.ir) : parseFloat(r.post.ir);
-            val = ((ir - ddScale.min) / (ddScale.max - ddScale.min)) * 100;
-          } else if (type === 'v_trend') {
-            const v = isSecondary ? parseFloat(r.pre.v) : parseFloat(r.post.v);
-            val = ((v - ddScale.min) / (ddScale.max - ddScale.min)) * 100;
-          } else if (type === 'drain_trend') {
-            val = ((parseFloat(r.pre.pct) - parseFloat(r.post.pct)) / ddScale.maxPct) * 100;
-          }
-          return { x, y: 100 - val };
-        });
-        return points.reduce((acc, p, i, a) => {
-          if (i === 0) return `M ${p.x},${p.y}`;
-          const prev = a[i - 1];
-          const cp1x = prev.x + (p.x - prev.x) / 2;
-          return `${acc} C ${cp1x},${prev.y} ${cp1x},${p.y} ${p.x},${p.y}`;
-        }, "");
-      };
-
-      return (
-        <div style={{fontStretch: 'condensed'}}>
-          {/* --- FLEET OVERVIEW --- */}
-          <div className="ct" style={{marginBottom:10, fontSize:12, fontWeight: 600}}>Battery Overview</div>
-          <div className="ov-grid" style={{gridTemplateColumns:'1fr 1fr'}}>
-            <div className="ov-box" style={{borderLeftColor:'var(--yellow)'}}>
-              <div className="ov-label">Complete Matches</div>
-              <div className="ov-val" style={{color:'var(--yellow)'}}>{valid.length}</div>
-              <div className="ov-sub">across {batteries.length} batteries</div>
-            </div>
-            <div className="ov-box" style={{borderLeftColor:'var(--green)'}}>
-              <div className="ov-label">Avg Post-Match V</div>
-              <div className="ov-val" style={{color:'var(--green)'}}>{fleetAvgV.toFixed(2)}V</div>
-              <div className="ov-sub">global average</div>
-            </div>
-          </div>
-          <div className="ov-grid" style={{gridTemplateColumns:'1fr 1fr 1fr'}}>
-            <div className="ov-box"><div className="ov-label">Avg Drop</div><div className="ov-val" style={{fontSize:18, color:'#5A99FF'}}>{fleetAvgDrop.toFixed(2)}V</div></div>
-            <div className="ov-box"><div className="ov-label">Avg Drain</div><div className="ov-val" style={{fontSize:18, color:'#5A99FF'}}>{fleetAvgCharge.toFixed(0)}%</div></div>
-            <div className="ov-box"><div className="ov-label">Avg IR</div><div className="ov-val" style={{fontSize:18, color:'var(--yellow)'}}>{fleetAvgIR.toFixed(0)}mΩ</div></div>
-          </div>
-
-          {/* --- FLEET COMPARISON --- */}
-          <div className="ct" style={{margin:'24px 0 10px', fontSize:12, fontWeight: 600}}>Battery Comparison</div>
-          <div className="card"><div className="cb">
-            <div className="comp-tabs">
-              {['ir','post voltage','drain','match usage'].map(t => (
-                <button key={t} className={`comp-tab ${activeSubTab===t?'on':''}`} onClick={()=>setActiveSubTab(t)}>{t.toUpperCase()}</button>
+          <div className="card">
+            <div className="ch"><span className="ct">Fleet Comparison</span></div>
+            <div className="chart-tabs">
+              {[["ir","⚡ Int Resistance"],["volt","🔋 Post Voltage"],["usage","📊 Match Usage"]].map(([k,lbl])=>(
+                <button key={k} className={"chart-tab"+(fleetChartTab===k?" on":"")} onClick={()=>setFleetChartTab(k)}>{lbl}</button>
               ))}
             </div>
-            <div className="graph-container">
-              <div className="grid-lines">{compTicks.map((_, i) => <div key={i} className="grid-line" />)}</div>
-              {comparisonData.sort((a,b) => activeSubTab==='ir' ? a.latestIR - b.latestIR : b.avgV - a.avgV).map(d => {
-                const val = activeSubTab==='post voltage' ? d.avgV : (activeSubTab==='ir' ? d.latestIR : (activeSubTab==='match usage' ? d.usage : d.avgDrain));
-                const w = activeSubTab==='post voltage' ? ((val-compScale.min)/(compScale.max-compScale.min))*100 : (val/compScale.max)*100;
-                return (
-                  <div key={d.id} className="chart-row">
-                    <div className="chart-label" style={{fontWeight: 700}}>{d.id}</div>
-                    <div className="chart-track">
-                      <div className="chart-bar" style={{width:`${Math.min(100, Math.max(2, w))}%`, 
-                        background: activeSubTab === 'ir' 
-                          ? (val < 15 ? 'var(--green)' : val <= 20 ? 'var(--orange)' : 'var(--red)') 
-                          : activeSubTab === 'post voltage' 
-                            ? (val > 12.5 ? 'var(--green)' : val >= 12 ? 'var(--yellow)' : 'var(--red)') 
-                            : 'var(--blue)'}}></div>
-                    </div>
-                    <div className="chart-val-label">{val.toFixed(1)}{compScale.unit}</div>
-                  </div>
-                );
-              })}
-              <div className="x-axis">{compTicks.map((t, i) => <div key={i} className="x-tick">{t}{compScale.unit}</div>)}</div>
+            <div style={{padding:"0 14px 14px"}}>
+              {fleetChartTab==="ir"&&<div><FleetIRChart batStats={batStats}/><div style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)",marginTop:8,lineHeight:1.6}}>Sorted best→worst. Below 15mΩ = healthy. Above 20mΩ = consider replacing.</div></div>}
+              {fleetChartTab==="volt"&&<div><FleetVoltageChart batStats={batStats}/><div style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)",marginTop:8,lineHeight:1.6}}>Average post-match voltage. Below 12.0V consistently = tired battery.</div></div>}
+              {fleetChartTab==="usage"&&<div><ChartCanvas type="bar" height={Math.max(120,batStats.length*36)} data={{labels:[...batStats].sort((a,b)=>b.matches-a.matches).map(b=>b.name),datasets:[{label:"Matches",data:[...batStats].sort((a,b)=>b.matches-a.matches).map(b=>b.matches),backgroundColor:"rgba(46,85,204,0.7)",borderColor:"#2E55CC",borderWidth:1,borderRadius:3}]}} options={{responsive:true,maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false},tooltip:{backgroundColor:"#0F1526",borderColor:"#1E2D5A",borderWidth:1,titleColor:"#F5C800",bodyColor:"#E8ECF8",callbacks:{label:ctx=>` ${ctx.parsed.x} matches`}}},scales:{x:{grid:{color:"#1E2D5A"},ticks:{color:"#5A6A99",font:{size:9}}},y:{grid:{color:"#1A2040"},ticks:{color:"#E8ECF8",font:{size:10,weight:"600"}}}}}}/></div>}
             </div>
-          </div></div>
+          </div>
 
-          {/* --- BATTERY DEEP DIVE --- */}
-          <div className="ct" style={{margin:'24px 0 10px', fontSize:12, fontWeight: 600}}>Battery Deep Dive</div>
-          <div className="card"><div className="cb">
-            <select className="inp" style={{fontWeight: 700}} value={selectedBat} onChange={e=>setSelectedBat(e.target.value)}>
-              <option value="">Select Battery...</option>
-              {batteries.map(b => <option key={b.id} value={b.id}>{b.id}</option>)}
-            </select>
-            
-            {selectedBat && diveRecs.length > 0 ? (
-              <div style={{marginTop:15}}>
-                <div className="comp-tabs">
-                  <button className={`comp-tab ${deepDiveTab==='ir_trend'?'on':''}`} onClick={()=>setDeepDiveTab('ir_trend')}>⚡ IR</button>
-                  <button className={`comp-tab ${deepDiveTab==='v_trend'?'on':''}`} onClick={()=>setDeepDiveTab('v_trend')}>🔋 VOLTS</button>
-                  <button className={`comp-tab ${deepDiveTab==='drain_trend'?'on':''}`} onClick={()=>setDeepDiveTab('drain_trend')}>💧 DRAIN</button>
+          <div className="card">
+            <div className="ch"><span className="ct">Battery Deep Dive</span><span style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)"}}>time series</span></div>
+            <div className="bat-selector"><label>Battery</label>
+              <select value={selBat} onChange={e=>setSelBat(e.target.value)}>
+                {batStats.map(b=><option key={b.name} value={b.name}>{b.name} ({b.matches} matches)</option>)}
+              </select>
+            </div>
+            {selBat&&selBatRecs.length>=2?(
+              <div>
+                {(()=>{const b=batStats.find(x=>x.name===selBat);if(!b)return null;return(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,padding:"0 14px 12px"}}><div className="st" style={{padding:10}}><div className="sl">Avg IR</div><div style={{fontFamily:"var(--mono)",fontSize:16,color:irColor(b.avgIR),marginTop:3}}>{b.avgIR}mΩ</div></div><div className="st" style={{padding:10}}><div className="sl">Avg Post V</div><div style={{fontFamily:"var(--mono)",fontSize:16,color:voltColor(b.avgPostV),marginTop:3}}>{b.avgPostV}V</div></div><div className="st" style={{padding:10}}><div className="sl">Avg Drain</div><div style={{fontFamily:"var(--mono)",fontSize:16,color:"#5BA3FF",marginTop:3}}>{b.avgDrainPct}%</div></div></div>);})()}
+                <div className="chart-tabs">
+                  {[["ir","⚡ IR Health"],["volt","🔋 Voltage"],["drain","📉 Drain"]].map(([k,lbl])=>(
+                    <button key={k} className={"chart-tab"+(batChartTab===k?" on":"")} onClick={()=>setBatChartTab(k)}>{lbl}</button>
+                  ))}
                 </div>
-                
-                <div className="deep-dive-graph" style={{marginTop: 20, paddingBottom: 25}}>
-                  {hoveredIndex !== null && (
-                    <div className="popover" style={{left: `${getX(hoveredIndex, diveRecs.length)}%`, top: '-75px', transform: 'translateX(-50%)'}}>
-                      <div className="pop-title" style={{fontWeight: 800}}>M{diveRecs[hoveredIndex].match}</div>
-                      {deepDiveTab === 'ir_trend' ? <><div className="pop-row"><span>PRE IR:</span><span>{diveRecs[hoveredIndex].pre.ir}mΩ</span></div><div className="pop-row"><span>POST IR:</span><span>{diveRecs[hoveredIndex].post.ir}mΩ</span></div></>
-                      : deepDiveTab === 'v_trend' ? <><div className="pop-row"><span>PRE V:</span><span>{diveRecs[hoveredIndex].pre.v}V</span></div><div className="pop-row"><span>POST V:</span><span>{diveRecs[hoveredIndex].post.v}V</span></div></>
-                      : <><div className="pop-row"><span>V LOSS:</span><span>{(diveRecs[hoveredIndex].pre.v - diveRecs[hoveredIndex].post.v).toFixed(2)}V</span></div><div className="pop-row"><span>% USED:</span><span>{diveRecs[hoveredIndex].pre.pct - diveRecs[hoveredIndex].post.pct}%</span></div></>}
-                    </div>
-                  )}
-
-                  <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{overflow:'visible'}}>
-                    <defs>
-                      <linearGradient id="lineGrad" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stopColor={deepDiveTab === 'drain_trend' ? '#5A99FF' : 'var(--yellow)'} stopOpacity="0.1"/>
-                        <stop offset="100%" stopColor="transparent" stopOpacity="0"/>
-                      </linearGradient>
-                    </defs>
-
-                    {/* Grid Background */}
-                    {[0, 12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100].map(y => (
-                      <g key={y}>
-                        <line x1="5" y1={y} x2="93" y2={y} stroke="rgba(255,255,255,0.12)" strokeWidth="0.4" />
-                        <text x="3.5" y={y} fontSize="3.5" fill="var(--muted)" textAnchor="end" dominantBaseline="middle" style={{fontFamily:'var(--disp)', fontWeight: 600, fontStretch: "ultra-condensed"}}>
-                          {deepDiveTab === 'drain_trend' 
-                            ? `${((1 - y/100) * ddScale.maxV).toFixed(1)}V` 
-                            : `${((1 - y/100) * (ddScale.max - ddScale.min) + ddScale.min).toFixed(1)}${ddScale.unit}`}
-                        </text>
-                      </g>
-                    ))}
-
-                    {/* --- THRESHOLD LINES (IR & VOLTAGE) --- */}
-                    {deepDiveTab === 'ir_trend' && (
-                      <>
-                        <line x1="5" y1={getYPos(15)} x2="93" y2={getYPos(15)} stroke="var(--yellow)" strokeWidth="0.6" strokeDasharray="1.5,1.5" opacity="0.8" />
-                        <text x="94" y={getYPos(15)} fontSize="3" fill="var(--yellow)" dominantBaseline="middle" style={{fontWeight:700}}>15</text>
-                        
-                        <line x1="5" y1={getYPos(20)} x2="93" y2={getYPos(20)} stroke="var(--red)" strokeWidth="0.6" strokeDasharray="1.5,1.5" opacity="0.8" />
-                        <text x="94" y={getYPos(20)} fontSize="3" fill="var(--red)" dominantBaseline="middle" style={{fontWeight:700}}>20</text>
-                      </>
-                    )}
-
-                    {deepDiveTab === 'v_trend' && (
-                      <>
-                        <line x1="5" y1={getYPos(12)} x2="93" y2={getYPos(12)} stroke="var(--red)" strokeWidth="0.6" strokeDasharray="1.5,1.5" opacity="0.8" />
-                        <text x="94" y={getYPos(12)} fontSize="3" fill="var(--red)" dominantBaseline="middle" style={{fontWeight:700}}>12V</text>
-                      </>
-                    )}
-
-                    {deepDiveTab === 'drain_trend' && [0, 25, 50, 75, 100].map(y => (
-                      <text key={`r-${y}`} x="94.5" y={y} fontSize="3.5" fill="var(--muted)" textAnchor="start" dominantBaseline="middle" style={{fontFamily:'var(--disp)', fontWeight: 600, fontStretch: "ultra-condensed"}}>
-                        {((1 - y/100) * ddScale.maxPct).toFixed(0)}%
-                      </text>
-                    ))}
-
-                    {diveRecs.map((_, i) => {
-                      const x = getX(i, diveRecs.length);
-                      return <line key={`v-grid-${i}`} x1={x} y1="0" x2={x} y2="100" stroke="rgba(255,255,255,0.18)" strokeWidth="0.4" />;
-                    })}
-                    
-                    {deepDiveTab === 'drain_trend' && diveRecs.map((r, i) => {
-                      const x = getX(i, diveRecs.length);
-                      const dropVal = parseFloat(r.pre.v) - parseFloat(r.post.v);
-                      const dropH = (dropVal / ddScale.maxV) * 100;
-                      const barColor = getStatusColor(dropVal, 'drain_bar');
-                      return <rect key={i} x={x - 1} y={100 - dropH} width="2" height={dropH} fill={barColor} opacity={hoveredIndex === i ? "1" : "0.5"} rx="0.2" />;
-                    })}
-
-                    <path d={`${getSmoothPath(diveRecs, deepDiveTab)} L 93,100 L 5,100 Z`} fill="url(#lineGrad)" />
-                    <path fill="none" stroke={deepDiveTab === 'drain_trend' ? '#5A99FF' : 'var(--yellow)'} strokeWidth="1.5" d={getSmoothPath(diveRecs, deepDiveTab)} />
-                    
-                    {(deepDiveTab === 'ir_trend' || deepDiveTab === 'v_trend') && (
-                      <path fill="none" stroke="#5A99FF" strokeWidth="1.2" d={getSmoothPath(diveRecs, deepDiveTab, true)} />
-                    )}
-
-                    {diveRecs.map((r, i) => {
-                      const x = getX(i, diveRecs.length);
-                      const isTrend = deepDiveTab === 'ir_trend' || deepDiveTab === 'v_trend';
-                      const yPost = 100 - (deepDiveTab === 'drain_trend' ? ((parseFloat(r.pre.pct) - parseFloat(r.post.pct)) / ddScale.maxPct) * 100 : ((parseFloat(r.post[deepDiveTab === 'ir_trend' ? 'ir' : 'v']) - ddScale.min) / (ddScale.max - ddScale.min)) * 100);
-                      const postVal = parseFloat(r.post[deepDiveTab === 'ir_trend' ? 'ir' : 'v']);
-                      const postDotColor = isTrend ? getStatusColor(postVal, deepDiveTab) : '#5A99FF';
-                      return (
-                        <g key={i}>
-                          {isTrend && <ellipse cx={x} cy={100 - ((parseFloat(r.pre[deepDiveTab === 'ir_trend' ? 'ir' : 'v']) - ddScale.min) / (ddScale.max - ddScale.min)) * 100} rx="1" ry="2" fill="#5A99FF" />}
-                          <ellipse cx={x} cy={yPost} rx="1.2" ry="2.5" fill={postDotColor} stroke={hoveredIndex === i ? "white" : "none"} strokeWidth="0.5" />
-                        </g>
-                      );
-                    })}
-
-                    {diveRecs.map((_, i) => {
-                        const width = 88 / (diveRecs.length - 1 || 1);
-                        const x = getX(i, diveRecs.length);
-                        return <rect key={`hit-${i}`} x={x - width/2} y="0" width={width} height="100%" fill="transparent" style={{cursor:'pointer'}} onMouseEnter={() => setHoveredIndex(i)} onMouseLeave={() => setHoveredIndex(null)} />;
-                    })}
-                  </svg>
-
-                  {/* Labels Container */}
-                  <div style={{ position:'absolute', bottom: 5, left: '15%', width: '76.5%', height: 12, pointerEvents: 'none' }}>
-                    {diveRecs.map((r, i) => {
-                      const leftPos = (i / (diveRecs.length - 1 || 1)) * 100;
-                      return (
-                        <div key={i} style={{ position: 'absolute', left: `${leftPos}%`, transform: 'translateX(-50%)' }}>
-                          <span style={{ fontSize:9, color:hoveredIndex === i ? 'var(--yellow)' : 'var(--muted)', fontWeight: 700, fontFamily:'var(--disp)' }}>
-                            M{r.match}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div style={{padding:"0 14px 14px"}}>
+                  {batChartTab==="ir"&&<div><IRChart recs={selBatRecs}/><div style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)",marginTop:8,lineHeight:1.6}}>Rising post-match IR over time is the clearest signal of battery aging.</div></div>}
+                  {batChartTab==="volt"&&<div><VoltageChart recs={selBatRecs}/><div style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)",marginTop:8,lineHeight:1.6}}>Consistent low post-match voltage indicates degraded capacity.</div></div>}
+                  {batChartTab==="drain"&&<div><DrainChart recs={selBatRecs}/><div style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)",marginTop:8,lineHeight:1.6}}>High drain may indicate heavy robot usage or a weaker battery.</div></div>}
                 </div>
               </div>
-            ) : <div style={{padding:40, textAlign:'center', color:'var(--muted)', fontSize:12}}>Insufficient data.</div>}
-          </div></div>
+            ):(
+              <div className="empty" style={{padding:"20px 14px"}}>{selBatRecs.length<2?"Need at least 2 logged matches to show charts.":"Select a battery above."}</div>
+            )}
+          </div>
 
-          {/* --- HEALTH RANKING --- */}
-          <div className="ct" style={{margin:'24px 0 10px', fontSize:12, fontWeight: 600}}>Health Ranking (by IR)</div>
-          <div className="card"><div className="cb" style={{paddingTop:8}}>
-            {comparisonData.sort((a,b)=>a.latestIR-b.latestIR).map((d, i) => (
-              <div key={d.id} className="rank-row">
-                <div className="rank-id" style={{color: i===0?'var(--green)':'var(--text)', fontWeight: 700}}>{i+1}. {d.id} {i===0 && '🏆'}</div>
-                <div className="rank-stat" style={{color: d.latestIR<15?'var(--green)': d.latestIR>20?'var(--red)':'var(--orange)', fontWeight: 600}}>{d.latestIR.toFixed(1)} mΩ</div>
-              </div>
-            ))}
-          </div></div>
+          <div className="card">
+            <div className="ch"><span className="ct">Health Ranking</span><span style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--muted)"}}>sorted by avg IR</span></div>
+            {batStats.map((b,i)=>{
+              function irLbl(ir){if(!ir)return null;if(ir<15)return<span className="rank-badge rank-ok">GOOD</span>;if(ir<20)return<span className="rank-badge rank-1">WATCH</span>;return<span className="rank-badge rank-warn">REPLACE</span>;}
+              const maxIR=Math.max(...batStats.map(x=>x.avgIR||0),1);
+              return(<div key={b.name} className="bar-row"><div className="bar-meta"><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--muted)",width:16}}>{i+1}.</span><span className="bar-name">{b.name}</span>{irLbl(b.avgIR)}</div><span className="bar-val" style={{color:irColor(b.avgIR)}}>{b.avgIR}mΩ</span></div><div className="bar-track"><div className="bar-fill" style={{width:(b.avgIR/maxIR*100)+"%",background:irColor(b.avgIR)}}/></div><div className="bar-sub">{b.matches} matches · avg post {b.avgPostV}V · drain {b.avgDrainPct}%</div></div>);
+            })}
+          </div>
         </div>
       );
-    };
+    }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    function Delta({a,b}){const d=+(b-a).toFixed(3);if(d>0)return<span className="sd pos">▲{Math.abs(d)}</span>;if(d<0)return<span className="sd neg">▼{Math.abs(d)}</span>;return<span className="sd" style={{color:"#2A3560"}}>—</span>;}
+
+    function ROBanner(){return(<div className="ro-banner"><span style={{fontSize:14}}>🔒</span><span className="ro-text">View-only — data is live but no changes can be made</span><span className="ro-badge">READ ONLY</span></div>);}
+
+    function Header({matchCount,online,onBack,backLabel,title}){
+      return(<div className="hdr"><div className="hdr-inner"><img src={LOGO_SRC} className="hdr-logo" alt="Under Control."/><div className="hdr-text">{onBack?(<div><button className="back" onClick={onBack}>‹ {backLabel||"Back"}</button><div className="hdr-title" style={{fontSize:15,marginTop:2}}>{title}</div></div>):(<div><div className="hdr-title">⚡ Battery Tracker</div><div className="hdr-team">Under Control. · FRC Team 1156</div><div className="hdr-tagline">Inspiring STEM Leaders Through Robotics</div></div>)}</div><div className="hdr-right"><div className="hdr-stat">{matchCount} MATCHES</div><div className="hdr-sync"><span className={"sync-dot "+(online?"sync-live":"sync-off")}></span><span style={{fontFamily:"var(--mono)",fontSize:9,color:online?"var(--green)":"#FF5555"}}>{online?"LIVE":"OFFLINE"}</span></div></div></div></div>);
+    }
+
+    function RecordDetail({record,onBack}){
+      const r=record;
+      return(<div className="app"><ROBanner/><Header onBack={onBack} backLabel="Back" title={"Match "+r.match+" — "+r.batteryId} matchCount={0} online={true}/><div className="pg"><div className="card"><div className="ch"><span className="ct">{r.batteryId}</span><span className="badge">MATCH {r.match}</span></div><div className="cb"><div style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--muted)",marginBottom:14}}>{fmtTs(r.ts)}</div><div className="detail-grid"><div className="dst"><div className="sl">Pre Voltage</div><div style={{fontFamily:"var(--mono)",fontSize:20,color:"#5BA3FF",marginTop:4}}>{r.pre.v} V</div></div><div className="dst"><div className="sl">Post Voltage</div><div style={{fontFamily:"var(--mono)",fontSize:20,color:"var(--yellow)",marginTop:4}}>{r.post.v} V</div></div><div className="dst"><div className="sl">Pre Charge</div><div style={{fontFamily:"var(--mono)",fontSize:20,color:"#5BA3FF",marginTop:4}}>{r.pre.pct} %</div></div><div className="dst"><div className="sl">Post Charge</div><div style={{fontFamily:"var(--mono)",fontSize:20,color:"var(--yellow)",marginTop:4}}>{r.post.pct} %</div></div><div className="dst"><div className="sl">Pre Int Res</div><div style={{fontFamily:"var(--mono)",fontSize:20,color:"#5BA3FF",marginTop:4}}>{r.pre.ir} mΩ</div></div><div className="dst"><div className="sl">Post Int Res</div><div style={{fontFamily:"var(--mono)",fontSize:20,color:"var(--yellow)",marginTop:4}}>{r.post.ir} mΩ</div></div></div><div style={{background:"#070B16",border:"1px solid var(--border)",padding:12,borderRadius:3}}><div className="sl" style={{marginBottom:10,color:"var(--yellow)"}}>Delta (Post − Pre)</div><div className="sg"><div className="st"><div className="sl">Voltage</div><Delta a={r.pre.v} b={r.post.v}/></div><div className="st"><div className="sl">Charge %</div><Delta a={r.pre.pct} b={r.post.pct}/></div><div className="st"><div className="sl">Int Res</div><Delta a={r.pre.ir} b={r.post.ir}/></div></div></div></div></div></div></div>);
+    }
+
+    function BatteryDetail({bid,records,onBack,onSelectRecord}){
+      const br=records.filter(r=>r.batteryId===bid);
+      const avgV=br.length?n2(avg(br.map(r=>r.post.v))):null;
+      const avgIR=br.length?n1(avg(br.map(r=>r.post.ir))):null;
+      return(<div className="app"><ROBanner/><Header onBack={onBack} backLabel="Fleet" title={bid} matchCount={0} online={true}/><div className="pg"><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}><div className="st" style={{padding:12}}><div className="sl">Matches</div><div style={{fontFamily:"var(--mono)",fontSize:26,color:"var(--yellow)"}}>{br.length}</div></div><div className="st" style={{padding:12}}><div className="sl">Avg Post V</div><div style={{fontFamily:"var(--mono)",fontSize:18,marginTop:4}}>{avgV?avgV+"V":"—"}</div></div><div className="st" style={{padding:12}}><div className="sl">Avg IR</div><div style={{fontFamily:"var(--mono)",fontSize:18,marginTop:4}}>{avgIR?avgIR+"mΩ":"—"}</div></div></div><div className="card"><div className="ch"><span className="ct">Match History</span></div>{br.length===0&&<div className="empty">No matches logged yet</div>}{br.map(r=>(<div key={r.id} className="rec" onClick={()=>onSelectRecord(r)}><div className="rec-top"><span style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--muted)"}}>{fmtTsShort(r.ts)}</span><span className="badge">MATCH {r.match}</span></div><div className="sg"><div className="st"><div className="sl">Voltage</div><div className="sv">{r.pre.v}→{r.post.v}</div><Delta a={r.pre.v} b={r.post.v}/></div><div className="st"><div className="sl">Charge %</div><div className="sv">{r.pre.pct}→{r.post.pct}</div><Delta a={r.pre.pct} b={r.post.pct}/></div><div className="st"><div className="sl">Int Res</div><div className="sv">{r.pre.ir}→{r.post.ir}</div><Delta a={r.pre.ir} b={r.post.ir}/></div></div></div>))}</div></div></div>);
+    }
+
+    function SetupScreen(){
+      return(<div className="app"><ROBanner/><div className="hdr"><div className="hdr-inner"><img src={LOGO_SRC} className="hdr-logo" alt="Under Control."/><div className="hdr-text"><div className="hdr-title">Setup Required</div><div className="hdr-team">Under Control. · FRC Team 1156</div></div></div></div><div className="pg"><div className="card" style={{borderColor:"var(--yellow)"}}><div className="ch"><span className="ct">Connect to Firebase</span></div><div className="cb">{[["Copy the 6 firebaseConfig values from the main app's index.html.","1"],["Paste them into this file (index-readonly.html) where it says PASTE_..._HERE.","2"],["Deploy to a second Netlify site (e.g. frcbattery-view.netlify.app).","3"],["Share the URL — viewers see live data but cannot make any changes.","4"]].map(([t,n])=>(<div key={n} className="setup-step"><div className="step-num">{n}</div><div className="step-text">{t}</div></div>))}</div></div></div></div>);
+    }
+
+    function App(){
+      const [tab,setTab]=useState("fleet");
+      const [batteries,setBats]=useState([]);
+      const [records,setRecs]=useState([]);
+      const [loading,setLoading]=useState(true);
+      const [online,setOnline]=useState(true);
+      const [view,setView]=useState(null);
+
+      useEffect(()=>{
+const u1 = db.collection("batteries").onSnapshot(s => {
+  setBats(s.docs.map(d => ({
+    id: d.id,
+    name: d.data().name || d.id,
+    ...d.data()
+  })));
+  setOnline(true);
+  setLoading(false);
+}, err => {
+  console.error("Erro ao carregar batteries:", err);
+  setOnline(false);
+  setLoading(false);
+});
+
+const toNum = (v, fallback = 0) => {
+  if (v === null || v === undefined || v === "") return fallback;
+  const n = Number(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const normalizeRecord = (doc) => {
+  const r = { id: doc.id, ...doc.data() };
+
+  return {
+    ...r,
+
+    // compatibilidade com o primeiro app
+    batteryId: r.batteryId || r.bat,
+    ts: r.ts || r.timestamp,
+
+    match: toNum(r.match, r.match),
+
+    pre: {
+      v: toNum(r.pre?.v),
+      pct: toNum(r.pre?.pct),
+      ir: toNum(r.pre?.ir)
+    },
+
+    post: r.post ? {
+      v: toNum(r.post?.v),
+      pct: toNum(r.post?.pct),
+      ir: toNum(r.post?.ir)
+    } : null
+  };
+};
+
+const u2 = db.collection("records").onSnapshot(s => {
+  const data = s.docs
+    .map(normalizeRecord)
+    .filter(r => r.post); // só mostra registros completos
+
+  data.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+  setRecs(data);
+  setOnline(true);
+}, err => {
+  console.error("Erro ao carregar records:", err);
+  setOnline(false);
+});
+      },[]);
+
+      function getBatRecs(n){return records.filter(r=>r.batteryId===n);}
+      function getLastRec(n){return getBatRecs(n)[0];}
+      function hColor(pct){return pct>60?"#39FF14":pct>30?"#F5C800":"#FF5555";}
+
+      if(loading)return(<div className="app"><div className="loading"><img src={LOGO_SRC} alt="Under Control"/><div className="loading-title">Under Control</div><div className="spinner"/><div className="loading-sub">Loading live data...</div></div></div>);
+      if(view&&view.type==="rec")return<RecordDetail record={view.data} onBack={()=>setView(view.from?{type:"bat",name:view.from.name}:null)}/>;
+      if(view&&view.type==="bat")return<BatteryDetail bid={view.name} records={records} onBack={()=>setView(null)} onSelectRecord={r=>setView({type:"rec",data:r,from:{name:view.name}})}/>;
+
+      return(<div><div className="app"><ROBanner/><Header matchCount={records.length} online={online}/>
+        <div className="tabs">{[["fleet","🔋 Fleet"],["history","📊 History"],["stats","📈 Stats"]].map(p=>(<button key={p[0]} className={"tab"+(tab===p[0]?" on":"")} onClick={()=>setTab(p[0])}>{p[1]}</button>))}</div>
+        <div className="pg">
+          {tab==="fleet"&&(<div>
+            <div style={{background:"rgba(10,14,26,.92)",border:"1px solid #3A2A00",borderRadius:4,padding:20,marginBottom:12,display:"flex",flexDirection:"column",alignItems:"center",gap:8,textAlign:"center"}}>
+              <div style={{fontSize:30}}>🔒</div>
+              <div style={{fontFamily:"var(--disp)",fontSize:16,fontWeight:700,letterSpacing:2,color:"#FF9933"}}>View Only</div>
+              <div style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--muted)",lineHeight:1.8}}>Live read-only view of the Under Control battery database. Data updates in real time as the team logs matches.</div>
+            </div>
+            <div className="card"><div className="ch"><span className="ct">Fleet ({batteries.length})</span></div>
+              {batteries.length===0&&<div className="empty">🔋<br/>No batteries registered yet.</div>}
+              {batteries.map(bat=>{const lr=getLastRec(bat.name);const pct=lr?lr.post.pct:0;const cnt=getBatRecs(bat.name).length;return(<div key={bat.id} className="bi" onClick={()=>setView({type:"bat",name:bat.name})}><div style={{flex:1}}><div className="bid">{bat.name}</div><div className="bsub">{cnt} match{cnt!==1?"es":""}{lr?" · Last: "+lr.post.v+"V · "+lr.post.pct+"%":""}</div><div className="hbar-w"><div className="hbar" style={{width:pct+"%",background:hColor(pct)}}/></div></div><span style={{color:"var(--muted)",fontSize:22}}>›</span></div>);})}
+            </div>
+          </div>)}
+          {tab==="history"&&(<div className="card"><div className="ch"><span className="ct">All Matches ({records.length})</span></div>
+            {records.length===0&&<div className="empty">📋<br/>No matches logged yet.</div>}
+            {records.map(r=>(<div key={r.id} className="rec" onClick={()=>setView({type:"rec",data:r})}><div className="rec-top"><span className="rec-id" style={{fontFamily:"var(--disp)",fontSize:17,fontWeight:700}}>{r.batteryId}</span><span className="badge">MATCH {r.match}</span></div><div style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--muted)",marginBottom:6}}>{fmtTs(r.ts)}</div><div className="sg"><div className="st"><div className="sl">Voltage</div><div className="sv">{r.pre.v}→{r.post.v}</div><Delta a={r.pre.v} b={r.post.v}/></div><div className="st"><div className="sl">Charge %</div><div className="sv">{r.pre.pct}→{r.post.pct}</div><Delta a={r.pre.pct} b={r.post.pct}/></div><div className="st"><div className="sl">Int Res</div><div className="sv">{r.pre.ir}→{r.post.ir}</div><Delta a={r.pre.ir} b={r.post.ir}/></div></div></div>))}
+          </div>)}
+          {tab==="stats"&&<StatsTab batteries={batteries} records={records}/>}
+        </div>
+        <div className="sponsor-strip"><img src={LOGO_SRC} className="sponsor-strip-logo" alt=""/><div className="sponsor-strip-text">Under Control. · FRC Team 1156 · Inspiring STEM Leaders Through Robotics</div></div>
+      </div></div>);
+    }
+
+    const root=ReactDOM.createRoot(document.getElementById("root"));
+    root.render(CONFIG_FILLED?<App/>:<SetupScreen/>);
   </script>
 </body>
 </html>
